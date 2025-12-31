@@ -2,8 +2,6 @@
 
 A beautiful, modern dashboard to view your GitHub PR statistics and merge time metrics.
 
-![Dashboard Preview](frontend/preview.png)
-
 ## Features
 
 - 📊 **PR Statistics** - View total, open, merged, and closed PRs
@@ -99,16 +97,6 @@ Navigate to `http://localhost:8080` in your browser.
 2. In your GitHub repo settings, go to **Pages**
 3. Select the branch and folder (e.g., `main` branch, `/frontend` folder if possible, or deploy from a separate branch)
 4. Your site will be live at `https://username.github.io/repo-name`
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/stats/repos` | List all repositories |
-| `GET /api/stats/prs?repo=<name>` | Get PR statistics |
-| `GET /api/stats/merge-times?repo=<name>` | Get merge time metrics |
-| `GET /api/stats/overview?repo=<name>` | Get combined stats |
-| `GET /health` | Health check |
 
 ## Technologies
 
