@@ -84,6 +84,18 @@ async function loadAggregateStats() {
 /**
  * Update PR statistics display
  */
+/**
+ * Safely set text content for an element
+ */
+function setText(element, text) {
+  if (element) {
+    element.textContent = text;
+  }
+}
+
+/**
+ * Update PR statistics display
+ */
 function updatePRStats(stats) {
   animateValue(elements.totalPRs, stats.total);
   animateValue(elements.openPRs, stats.open);
@@ -102,26 +114,29 @@ function updateMergeMetrics(metrics) {
     return `${(hours / 24).toFixed(1)}d`;
   };
 
-  elements.avgTime.textContent = formatTime(metrics.average);
-  elements.p50Time.textContent = formatTime(metrics.p50);
-  elements.p95Time.textContent = formatTime(metrics.p95);
-  elements.p99Time.textContent = formatTime(metrics.p99);
+  setText(elements.avgTime, formatTime(metrics.average));
+  setText(elements.p50Time, formatTime(metrics.p50));
+  setText(elements.p95Time, formatTime(metrics.p95));
+  setText(elements.p99Time, formatTime(metrics.p99));
 }
 
 /**
  * Update the chart visualization
  */
 function updateChart(metrics) {
+  if (!elements.chart) return;
+
   if (!metrics.count || metrics.count === 0) {
     elements.chart.innerHTML = `
       <div class="chart-placeholder">
         <span>No merged PRs to display</span>
       </div>
     `;
-    elements.chartLegend.innerHTML = '';
+    if (elements.chartLegend) elements.chartLegend.innerHTML = '';
     return;
   }
 
+  // ... rest of chart logic
   const values = [
     { label: 'AVG', value: metrics.average, color: 'linear-gradient(180deg, #a78bfa, #667eea)' },
     { label: 'P50', value: metrics.p50, color: 'linear-gradient(180deg, #4facfe, #00f2fe)' },
@@ -130,7 +145,7 @@ function updateChart(metrics) {
   ];
 
   const maxValue = Math.max(...values.map(v => v.value));
-  const chartHeight = 160; // pixels
+  const chartHeight = 160;
 
   elements.chart.innerHTML = values.map(item => {
     const height = (item.value / maxValue) * chartHeight;
@@ -146,31 +161,34 @@ function updateChart(metrics) {
     `;
   }).join('');
 
-  // Update legend
-  elements.chartLegend.innerHTML = `
-    <div class="legend-item">
-      <span class="legend-color" style="background: #a78bfa;"></span>
-      <span>Average</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-color" style="background: #4facfe;"></span>
-      <span>Median (P50)</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-color" style="background: #ffc107;"></span>
-      <span>95th Percentile</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-color" style="background: #f85149;"></span>
-      <span>99th Percentile</span>
-    </div>
-  `;
+  if (elements.chartLegend) {
+    elements.chartLegend.innerHTML = `
+      <div class="legend-item">
+        <span class="legend-color" style="background: #a78bfa;"></span>
+        <span>Average</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: #4facfe;"></span>
+        <span>Median (P50)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: #ffc107;"></span>
+        <span>95th Percentile</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background: #f85149;"></span>
+        <span>99th Percentile</span>
+      </div>
+    `;
+  }
 }
 
 /**
  * Update top contributed repositories
  */
 function updateTopRepos(repos) {
+  if (!elements.reposGrid) return;
+
   if (!repos || repos.length === 0) {
     elements.reposGrid.innerHTML = `
       <div class="repo-placeholder">No contributed repositories found</div>
@@ -218,6 +236,8 @@ function formatTimeShort(hours) {
  * Animate a numeric value change
  */
 function animateValue(element, newValue) {
+  if (!element) return;
+
   const currentValue = parseInt(element.textContent) || 0;
   const duration = 500;
   const steps = 20;
