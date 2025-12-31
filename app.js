@@ -11,7 +11,7 @@ const GITHUB_USERNAME = 'tyagiapoorv';
 const elements = {
   userAvatar: document.getElementById('userAvatar'),
   username: document.getElementById('username'),
-  repoCount: document.getElementById('repoCount'),
+
   totalPRs: document.getElementById('totalPRs'),
   openPRs: document.getElementById('openPRs'),
   mergedPRs: document.getElementById('mergedPRs'),
@@ -61,8 +61,7 @@ async function loadAggregateStats() {
 
     const data = await response.json();
 
-    // Update repo count
-    elements.repoCount.textContent = data.prStats.repositories || 0;
+
 
     // Update PR stats
     updatePRStats(data.prStats);
@@ -242,7 +241,7 @@ function animateValue(element, newValue) {
  * Reset stats to default state
  */
 function resetStats() {
-  elements.repoCount.textContent = '-';
+
   elements.totalPRs.textContent = '-';
   elements.openPRs.textContent = '-';
   elements.mergedPRs.textContent = '-';
