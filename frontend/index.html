@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GitHub Stats Dashboard - View your PR statistics and merge time metrics across all repositories">
+  <title>GitHub Stats Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Background Effects -->
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <h1>GitHub Stats</h1>
+        </div>
+        <div class="user-info" id="userInfo">
+          <img class="avatar" id="userAvatar" src="" alt="User Avatar">
+          <span class="username" id="username">Loading...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Aggregate Overview Banner -->
+      <section class="overview-banner">
+        <div class="banner-content">
+          <div class="banner-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+            </svg>
+          </div>
+          <div class="banner-text">
+            <h2>All Repositories</h2>
+            <p>Aggregate stats across <span id="repoCount">-</span> repositories you've contributed to</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Overview -->
+      <section class="stats-section">
+        <h2 class="section-title">Pull Request Overview</h2>
+        <div class="stats-grid">
+          <div class="stat-card total">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM2 6a4 4 0 1 1 8 0 4 4 0 0 1-8 0zm4 12a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-4 3a4 4 0 1 1 8 0 4 4 0 0 1-8 0zm16-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm-4 3a4 4 0 1 1 8 0 4 4 0 0 1-8 0zM6 7.5A.5.5 0 0 0 5.5 8v8a.5.5 0 0 0 1 0V8A.5.5 0 0 0 6 7.5zm11.5 9.5a.5.5 0 0 0-.5.5v.5h-7a.5.5 0 0 0 0 1h7.5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="totalPRs">-</span>
+              <span class="stat-label">Total PRs</span>
+            </div>
+          </div>
+          
+          <div class="stat-card open">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="openPRs">-</span>
+              <span class="stat-label">Open</span>
+            </div>
+          </div>
+          
+          <div class="stat-card merged">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="mergedPRs">-</span>
+              <span class="stat-label">Merged</span>
+            </div>
+          </div>
+          
+          <div class="stat-card closed">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value" id="closedPRs">-</span>
+              <span class="stat-label">Closed</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Merge Time Metrics -->
+      <section class="stats-section">
+        <h2 class="section-title">Merge Time Metrics</h2>
+        <p class="section-subtitle">Time from PR creation to merge (in hours)</p>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-badge avg">AVG</span>
+            </div>
+            <span class="metric-value" id="avgTime">-</span>
+            <span class="metric-label">Average</span>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-badge p50">P50</span>
+            </div>
+            <span class="metric-value" id="p50Time">-</span>
+            <span class="metric-label">Median</span>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-badge p95">P95</span>
+            </div>
+            <span class="metric-value" id="p95Time">-</span>
+            <span class="metric-label">95th Percentile</span>
+          </div>
+          
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-badge p99">P99</span>
+            </div>
+            <span class="metric-value" id="p99Time">-</span>
+            <span class="metric-label">99th Percentile</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Merge Time Distribution Chart -->
+      <section class="stats-section chart-section">
+        <h2 class="section-title">Merge Time Distribution</h2>
+        <div class="chart-container">
+          <div class="chart" id="chart">
+            <div class="chart-placeholder">
+              <span>Loading chart...</span>
+            </div>
+          </div>
+          <div class="chart-legend" id="chartLegend"></div>
+        </div>
+      </section>
+
+      <!-- Top Repositories -->
+      <section class="stats-section">
+        <h2 class="section-title">Top Contributed Repositories</h2>
+        <div class="repos-grid" id="reposGrid">
+          <div class="repo-placeholder">Loading repositories...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Built with ❤️ for GitHub Statistics</p>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <span>Loading data from GitHub...</span>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="toast" id="errorToast">
+      <span class="toast-message" id="toastMessage"></span>
+      <button class="toast-close" onclick="hideToast()">×</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
