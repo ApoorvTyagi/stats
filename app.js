@@ -69,7 +69,7 @@ async function init() {
  */
 async function loadAggregateStats() {
   try {
-    const response = await fetch(`${API_BASE_URL}/aggregate`);
+    const response = await fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch aggregate stats');
