@@ -5,7 +5,17 @@
 
 // Configuration - Update this URL after deploying backend to Vercel
 const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api';
-const GITHUB_USERNAME = 'tyagiapoorv';
+const DEFAULT_USERNAME = 'tyagiapoorv';
+
+
+function getUsernameFromPath() {
+  const pathname = window.location.pathname;
+  // Remove /stats/ prefix and any leading/trailing slashes
+  const pathAfterStats = pathname.replace(/^\/stats\/?/, '').replace(/^\/+|\/+$/g, '');
+  return pathAfterStats || DEFAULT_USERNAME;
+}
+
+const GITHUB_USERNAME = getUsernameFromPath();
 
 // DOM Elements
 const elements = {
@@ -38,6 +48,12 @@ async function init() {
     // Set user info
     elements.userAvatar.src = `https://github.com/${GITHUB_USERNAME}.png`;
     elements.username.textContent = GITHUB_USERNAME;
+    
+    // Update favicon dynamically
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) {
+      favicon.href = `https://github.com/${GITHUB_USERNAME}.png`;
+    }
 
     // Load aggregate stats
     await loadAggregateStats();
