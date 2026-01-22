@@ -4,7 +4,7 @@
  */
 
 // Configuration - Update this URL after deploying backend to Vercel
-const API_BASE_URL = 'https://stats-nine-indol.vercel.app/api';
+const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api';
 const GITHUB_USERNAME = 'tyagiapoorv';
 
 // DOM Elements
@@ -53,7 +53,7 @@ async function init() {
  */
 async function loadAggregateStats() {
   try {
-    const response = await fetch(`${API_BASE_URL}/stats/aggregate`);
+    const response = await fetch(`${API_BASE_URL}/aggregate`);
 
     if (!response.ok) {
       throw new Error('Failed to fetch aggregate stats');
