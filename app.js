@@ -12,6 +12,7 @@ function getUsernameFromPath() {
   const pathname = window.location.pathname;
   // Remove /stats/ prefix and any leading/trailing slashes
   const pathAfterStats = pathname.replace(/^\/stats\/?/, '').replace(/^\/+|\/+$/g, '');
+  console.log(pathAfterStats);
   return pathAfterStats || DEFAULT_USERNAME;
 }
 
@@ -48,7 +49,7 @@ async function init() {
     // Set user info
     elements.userAvatar.src = `https://github.com/${GITHUB_USERNAME}.png`;
     elements.username.textContent = GITHUB_USERNAME;
-    
+
     // Update favicon dynamically
     const favicon = document.querySelector('link[rel="icon"]');
     if (favicon) {
@@ -212,7 +213,15 @@ function updateTopRepos(repos) {
     return;
   }
 
-  elements.reposGrid.innerHTML = repos.map(repo => `
+  // Sort by total PRs (descending), then by merged PRs (descending)
+  const sortedRepos = [...repos].sort((a, b) => {
+    if (b.prCount !== a.prCount) {
+      return b.prCount - a.prCount;
+    }
+    return b.mergedCount - a.mergedCount;
+  });
+
+  elements.reposGrid.innerHTML = sortedRepos.map(repo => `
     <div class="repo-card">
       <div class="repo-name">
         <svg viewBox="0 0 24 24" fill="currentColor">
