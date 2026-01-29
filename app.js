@@ -8,29 +8,95 @@ const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api';
 const DEFAULT_USERNAME = 'tyagiapoorv';
 
 
+/**
+ * Check if current URL is for open-prs page and handle accordingly
+ */
+function checkAndHandleOpenPRsRoute() {
+  const pathname = window.location.pathname;
+  
+  // Check if URL contains open-prs
+  if (pathname.includes('open-prs')) {
+    // Extract username from path like /stats/username/open-prs.html
+    const match = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
+    const username = match ? match[1] : DEFAULT_USERNAME;
+    
+    // Redirect to load open-prs.js properly
+    // We'll inject the open-prs script and content instead
+    loadOpenPRsPage(username);
+    return true; // Indicate we're handling open-prs route
+  }
+  return false;
+}
+
+/**
+ * Dynamically load the open-prs page
+ */
+function loadOpenPRsPage(username) {
+  // Remove the current app.js functionality and load open-prs.js
+  const script = document.createElement('script');
+  script.src = '/stats/open-prs.js';
+  
+  // Update the page content to open-prs template
+  fetch('/stats/open-prs.html')
+    .then(response => response.text())
+    .then(html => {
+      // Parse and extract body content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const newBody = doc.body.innerHTML;
+      const newHead = doc.head.innerHTML;
+      
+      // Replace current page content
+      document.body.innerHTML = newBody;
+      
+      // Add open-prs.css if not already present
+      if (!document.querySelector('link[href*="open-prs.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/stats/open-prs.css';
+        document.head.appendChild(link);
+      }
+      
+      // Load the open-prs.js script
+      document.body.appendChild(script);
+    })
+    .catch(err => {
+      console.error('Failed to load open-prs page:', err);
+    });
+}
+
 function getUsernameFromPath() {
   const pathname = window.location.pathname;
   
+  // Handle open-prs URLs: /stats/username/open-prs.html
+  const openPRsMatch = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
+  if (openPRsMatch && openPRsMatch[1]) {
+    return openPRsMatch[1];
+  }
+  
   // Extract username from path: /stats/{username}/ or /stats/{username}/index.html
-  // Match pattern: /stats/{username} where username is not index.html or empty
   const match = pathname.match(/\/stats\/([^\/]+?)(?:\/(?:index\.html)?)?$/i);
-  if (match && match[1] && match[1].toLowerCase() !== 'index.html') {
+  if (match && match[1] && !['index.html', 'open-prs.html'].includes(match[1].toLowerCase())) {
     return match[1];
   }
   
-  // Fallback: Remove /stats/ prefix, index.html, and slashes
+  // Fallback: Remove /stats/ prefix, index.html, open-prs.html, and slashes
   const pathAfterStats = pathname
     .replace(/^\/stats\/?/, '')
-    .replace(/\/?index\.html$/i, '')
+    .replace(/\/?(?:index|open-prs)\.html$/i, '')
+    .replace(/\/open-prs$/i, '')
     .replace(/^\/+|\/+$/g, '');
   
-  // If result is empty or is just 'index.html', return default
-  if (!pathAfterStats || pathAfterStats.toLowerCase() === 'index.html') {
+  // If result is empty or is a known page name, return default
+  if (!pathAfterStats || ['index.html', 'open-prs.html', 'open-prs'].includes(pathAfterStats.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
   
   return pathAfterStats;
 }
+
+// Check if this is an open-prs route - if so, handle it and stop normal initialization
+const isOpenPRsRoute = checkAndHandleOpenPRsRoute();
 
 const GITHUB_USERNAME = getUsernameFromPath();
 
@@ -383,5 +449,9 @@ function hideToast() {
   elements.errorToast.classList.remove('active');
 }
 
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', init);
+// Initialize on DOM ready (only if not handling open-prs route)
+document.addEventListener('DOMContentLoaded', () => {
+  if (!isOpenPRsRoute) {
+    init();
+  }
+});
