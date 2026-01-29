@@ -34,25 +34,30 @@ function checkAndRedirectOpenPRsRoute() {
 function getUsernameFromPath() {
   const pathname = window.location.pathname;
   
-  // Extract username from path: /stats/{username}/ or /stats/{username}/index.html
-  // But NOT if it's a known page name
-  const match = pathname.match(/\/stats\/([^\/]+?)(?:\/(?:index\.html)?)?$/i);
-  if (match && match[1] && !['index.html', 'open-prs.html', 'open-prs'].includes(match[1].toLowerCase())) {
-    return match[1];
-  }
+  // Remove /stats/ prefix first
+  let path = pathname.replace(/^\/stats\/?/, '');
   
-  // Fallback: Remove /stats/ prefix, index.html, and slashes
-  const pathAfterStats = pathname
-    .replace(/^\/stats\/?/, '')
-    .replace(/\/?index\.html$/i, '')
-    .replace(/^\/+|\/+$/g, '');
+  // Remove trailing slash and/or index.html
+  path = path.replace(/\/?(?:index\.html)?$/, '');
   
-  // If result is empty or is a known page name, return default
-  if (!pathAfterStats || ['index.html', 'open-prs.html', 'open-prs'].includes(pathAfterStats.toLowerCase())) {
+  // Remove any remaining trailing slashes
+  path = path.replace(/\/+$/, '');
+  
+  // If empty or is a known page name, return default
+  if (!path || ['index.html', 'open-prs.html', 'open-prs'].includes(path.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
   
-  return pathAfterStats;
+  // If path contains a slash, take only the first segment (the username)
+  const segments = path.split('/');
+  const username = segments[0];
+  
+  // Final check - if it's a known page, return default
+  if (['index.html', 'open-prs.html', 'open-prs'].includes(username.toLowerCase())) {
+    return DEFAULT_USERNAME;
+  }
+  
+  return username;
 }
 
 // Check if this is an open-prs route - if so, redirect and stop
