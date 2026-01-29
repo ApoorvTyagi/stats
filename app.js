@@ -10,10 +10,26 @@ const DEFAULT_USERNAME = 'tyagiapoorv';
 
 function getUsernameFromPath() {
   const pathname = window.location.pathname;
-  // Remove /stats/ prefix and any leading/trailing slashes
-  const pathAfterStats = pathname.replace(/^\/stats\/?/, '').replace(/^\/+|\/+$/g, '');
-  console.log(pathAfterStats);
-  return pathAfterStats || DEFAULT_USERNAME;
+  
+  // Extract username from path: /stats/{username}/ or /stats/{username}/index.html
+  // Match pattern: /stats/{username} where username is not index.html or empty
+  const match = pathname.match(/\/stats\/([^\/]+?)(?:\/(?:index\.html)?)?$/i);
+  if (match && match[1] && match[1].toLowerCase() !== 'index.html') {
+    return match[1];
+  }
+  
+  // Fallback: Remove /stats/ prefix, index.html, and slashes
+  const pathAfterStats = pathname
+    .replace(/^\/stats\/?/, '')
+    .replace(/\/?index\.html$/i, '')
+    .replace(/^\/+|\/+$/g, '');
+  
+  // If result is empty or is just 'index.html', return default
+  if (!pathAfterStats || pathAfterStats.toLowerCase() === 'index.html') {
+    return DEFAULT_USERNAME;
+  }
+  
+  return pathAfterStats;
 }
 
 const GITHUB_USERNAME = getUsernameFromPath();

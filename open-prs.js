@@ -8,11 +8,20 @@ const DEFAULT_USERNAME = 'tyagiapoorv';
 
 function getUsernameFromPath() {
   const pathname = window.location.pathname;
-  // Remove /stats/ prefix and open-prs.html, and any leading/trailing slashes
+  
+  // More robust extraction: find the username between /stats/ and /open-prs
+  // Handles: /stats/username/open-prs.html, /stats/username/open-prs, etc.
+  const match = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
+  if (match && match[1]) {
+    return match[1];
+  }
+  
+  // Fallback: try removing prefixes/suffixes
   const pathAfterStats = pathname
     .replace(/^\/stats\/?/, '')
-    .replace(/open-prs\.html\/?$/, '')
+    .replace(/\/?open-prs(\.html)?$/i, '')
     .replace(/^\/+|\/+$/g, '');
+  
   return pathAfterStats || DEFAULT_USERNAME;
 }
 
