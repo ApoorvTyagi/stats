@@ -388,10 +388,14 @@ function resetStats() {
 }
 
 /**
- * Show/hide loading overlay
+ * Show/hide loading overlay (uses shared LoadingScreen module)
  */
 function showLoading(show) {
-  elements.loadingOverlay.classList.toggle('active', show);
+  if (show) {
+    LoadingScreen.show();
+  } else {
+    LoadingScreen.hide();
+  }
 }
 
 /**
