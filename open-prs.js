@@ -51,10 +51,16 @@ async function init() {
       favicon.href = `https://github.com/${GITHUB_USERNAME}.png`;
     }
 
-    // Update back link to include username
+    // Update back link to include username - go back to /stats/{username}/
     const backLink = document.querySelector('.back-link');
     if (backLink) {
-      backLink.href = `index.html`;
+      // Build the correct path back to the user's dashboard
+      const basePath = '/stats/';
+      if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
+        backLink.href = `${basePath}${GITHUB_USERNAME}/`;
+      } else {
+        backLink.href = basePath;
+      }
     }
 
     // Load open PRs

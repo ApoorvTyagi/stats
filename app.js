@@ -75,8 +75,13 @@ async function init() {
 function setupOpenPRsCardClick() {
   if (elements.openPRsCard) {
     elements.openPRsCard.addEventListener('click', () => {
-      // Navigate to open PRs page
-      window.location.href = 'open-prs.html';
+      // Navigate to open PRs page with username preserved
+      const basePath = '/stats/';
+      if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
+        window.location.href = `${basePath}${GITHUB_USERNAME}/open-prs.html`;
+      } else {
+        window.location.href = `${basePath}open-prs.html`;
+      }
     });
 
     // Add keyboard accessibility
@@ -85,7 +90,12 @@ function setupOpenPRsCardClick() {
     elements.openPRsCard.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        window.location.href = 'open-prs.html';
+        const basePath = '/stats/';
+        if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
+          window.location.href = `${basePath}${GITHUB_USERNAME}/open-prs.html`;
+        } else {
+          window.location.href = `${basePath}open-prs.html`;
+        }
       }
     });
   }
