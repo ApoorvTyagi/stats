@@ -25,6 +25,7 @@ const elements = {
 
   totalPRs: document.getElementById('totalPRs'),
   openPRs: document.getElementById('openPRs'),
+  openPRsCard: document.getElementById('openPRsCard'),
   mergedPRs: document.getElementById('mergedPRs'),
   closedPRs: document.getElementById('closedPRs'),
   avgTime: document.getElementById('avgTime'),
@@ -56,12 +57,37 @@ async function init() {
       favicon.href = `https://github.com/${GITHUB_USERNAME}.png`;
     }
 
+    // Setup click handler for Open PRs card
+    setupOpenPRsCardClick();
+
     // Load aggregate stats
     await loadAggregateStats();
   } catch (error) {
     showError('Failed to initialize dashboard: ' + error.message);
   } finally {
     showLoading(false);
+  }
+}
+
+/**
+ * Setup click handler for Open PRs card to navigate to open PRs page
+ */
+function setupOpenPRsCardClick() {
+  if (elements.openPRsCard) {
+    elements.openPRsCard.addEventListener('click', () => {
+      // Navigate to open PRs page
+      window.location.href = 'open-prs.html';
+    });
+
+    // Add keyboard accessibility
+    elements.openPRsCard.setAttribute('tabindex', '0');
+    elements.openPRsCard.setAttribute('role', 'link');
+    elements.openPRsCard.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.location.href = 'open-prs.html';
+      }
+    });
   }
 }
 
