@@ -6,26 +6,25 @@
 const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api';
 const DEFAULT_USERNAME = 'tyagiapoorv';
 
-function getUsernameFromPath() {
-  const pathname = window.location.pathname;
+function getUsernameFromURL() {
+  // First, check for query parameter (preferred method)
+  const urlParams = new URLSearchParams(window.location.search);
+  const userParam = urlParams.get('user');
+  if (userParam) {
+    return userParam;
+  }
   
-  // More robust extraction: find the username between /stats/ and /open-prs
-  // Handles: /stats/username/open-prs.html, /stats/username/open-prs, etc.
+  // Fallback: try to extract from path (for direct access to /stats/username/open-prs.html)
+  const pathname = window.location.pathname;
   const match = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
   if (match && match[1]) {
     return match[1];
   }
   
-  // Fallback: try removing prefixes/suffixes
-  const pathAfterStats = pathname
-    .replace(/^\/stats\/?/, '')
-    .replace(/\/?open-prs(\.html)?$/i, '')
-    .replace(/^\/+|\/+$/g, '');
-  
-  return pathAfterStats || DEFAULT_USERNAME;
+  return DEFAULT_USERNAME;
 }
 
-const GITHUB_USERNAME = getUsernameFromPath();
+const GITHUB_USERNAME = getUsernameFromURL();
 
 // Store all PRs for filtering
 let allOpenPRs = [];
