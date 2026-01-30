@@ -90,29 +90,14 @@ const elements = {
   
   // Activity Timeline elements
   activityChart: document.getElementById('activityChart'),
-  activityPeriod: document.getElementById('activityPeriod'),
   totalCreated: document.getElementById('totalCreated'),
   totalMerged: document.getElementById('totalMerged'),
-  totalReviewed: document.getElementById('totalReviewed'),
   trendCreated: document.getElementById('trendCreated'),
   trendMerged: document.getElementById('trendMerged'),
-  trendReviewed: document.getElementById('trendReviewed'),
   
   // Day of Week elements
   dayOfWeekChart: document.getElementById('dayOfWeekChart'),
-  dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder'),
-  
-  // Reviews elements
-  reviewsContainer: document.getElementById('reviewsContainer'),
-  reviewsPlaceholder: document.getElementById('reviewsPlaceholder'),
-  totalReviews: document.getElementById('totalReviews'),
-  approvedReviews: document.getElementById('approvedReviews'),
-  changesReviews: document.getElementById('changesReviews'),
-  commentedReviews: document.getElementById('commentedReviews'),
-  donutApproved: document.getElementById('donutApproved'),
-  donutChanges: document.getElementById('donutChanges'),
-  donutCommented: document.getElementById('donutCommented'),
-  donutTotal: document.getElementById('donutTotal')
+  dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder')
 };
 
 /**
@@ -230,35 +215,12 @@ async function loadAggregateStats() {
     // Update day of week chart from aggregate data
     updateDayOfWeekChart(data.activityByDay);
     
-    // Fetch reviews data from new endpoint
-    loadReviewsData();
-    
     // Fetch activity timeline from new endpoint
     loadActivityData();
 
   } catch (error) {
     showError('Could not load stats: ' + error.message);
     resetStats();
-  }
-}
-
-/**
- * Load reviews data from /api/reviews endpoint
- */
-async function loadReviewsData() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/reviews?username=${encodeURIComponent(GITHUB_USERNAME)}`);
-    
-    if (response.ok) {
-      const reviewsData = await response.json();
-      updateReviewsSection(reviewsData);
-    } else {
-      console.warn('Reviews API returned status:', response.status);
-      updateReviewsSection(null);
-    }
-  } catch (error) {
-    console.warn('Failed to load reviews:', error.message);
-    updateReviewsSection(null);
   }
 }
 
@@ -295,32 +257,28 @@ function updateActivityTimeline(activityData) {
     return;
   }
   
-  // Update period text
-  if (elements.activityPeriod) {
-    const periodMap = {
-      '3months': '3 months',
-      '6months': '6 months',
-      '1year': '1 year'
-    };
-    elements.activityPeriod.textContent = periodMap[activityData.period] || activityData.period;
-  }
+  // Get only last 4 weeks
+  const last4Weeks = activityData.timeline.slice(-4);
+  
+  // Calculate totals for last 4 weeks only
+  const totals = last4Weeks.reduce((acc, week) => {
+    acc.created += week.created || 0;
+    acc.merged += week.merged || 0;
+    return acc;
+  }, { created: 0, merged: 0 });
   
   // Update totals
-  if (activityData.totals) {
-    if (elements.totalCreated) animateValue(elements.totalCreated, activityData.totals.created || 0);
-    if (elements.totalMerged) animateValue(elements.totalMerged, activityData.totals.merged || 0);
-    if (elements.totalReviewed) animateValue(elements.totalReviewed, activityData.totals.reviewed || 0);
-  }
+  if (elements.totalCreated) animateValue(elements.totalCreated, totals.created);
+  if (elements.totalMerged) animateValue(elements.totalMerged, totals.merged);
   
   // Update trends
   if (activityData.trend) {
     updateTrendIndicator(elements.trendCreated, activityData.trend.created);
     updateTrendIndicator(elements.trendMerged, activityData.trend.merged);
-    updateTrendIndicator(elements.trendReviewed, activityData.trend.reviewed);
   }
   
-  // Render chart
-  renderActivityChart(activityData.timeline);
+  // Render chart with last 4 weeks only
+  renderActivityChart(last4Weeks);
 }
 
 /**
@@ -354,41 +312,33 @@ function renderActivityChart(timeline) {
   
   // Find max value for scaling
   const maxValue = Math.max(
-    ...timeline.map(w => Math.max(w.created || 0, w.merged || 0, w.reviewed || 0)),
+    ...timeline.map(w => Math.max(w.created || 0, w.merged || 0)),
     1
   );
   
-  const chartHeight = 160; // pixels for bar area
+  const chartHeight = 140; // pixels for bar area
   
   // Generate bar groups
-  const barsHtml = timeline.map((week, index) => {
+  const barsHtml = timeline.map((week) => {
     const createdHeight = ((week.created || 0) / maxValue) * chartHeight;
     const mergedHeight = ((week.merged || 0) / maxValue) * chartHeight;
-    const reviewedHeight = ((week.reviewed || 0) / maxValue) * chartHeight;
     
-    // Format date for label (show month for first week of each month)
+    // Format date for label
     const date = new Date(week.date);
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const showLabel = index === 0 || date.getDate() <= 7;
-    const label = showLabel ? monthNames[date.getMonth()] : '';
-    
-    // Format tooltip date
-    const tooltipDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     
     return `
       <div class="activity-bar-group">
         <div class="activity-bar-tooltip">
-          <div class="tooltip-date">Week of ${tooltipDate}</div>
+          <div class="tooltip-date">Week of ${label}</div>
           <div class="tooltip-row created">Created: ${week.created || 0}</div>
           <div class="tooltip-row merged">Merged: ${week.merged || 0}</div>
-          <div class="tooltip-row reviewed">Reviewed: ${week.reviewed || 0}</div>
         </div>
         <div class="activity-bars">
           <div class="activity-bar created" style="height: ${Math.max(createdHeight, 2)}px"></div>
           <div class="activity-bar merged" style="height: ${Math.max(mergedHeight, 2)}px"></div>
-          <div class="activity-bar reviewed" style="height: ${Math.max(reviewedHeight, 2)}px"></div>
         </div>
-        ${label ? `<span class="activity-bar-label">${label}</span>` : ''}
+        <span class="activity-bar-label">${label}</span>
       </div>
     `;
   }).join('');
@@ -577,8 +527,8 @@ function updateReposBarChart(repos) {
   // Sort by merged count (descending)
   const sortedRepos = [...repos].sort((a, b) => b.mergedCount - a.mergedCount);
   
-  // Take top 10
-  const topRepos = sortedRepos.slice(0, 10);
+  // Take top 5
+  const topRepos = sortedRepos.slice(0, 5);
   
   // Find max for scaling
   const maxMerged = Math.max(...topRepos.map(r => r.mergedCount));
@@ -641,71 +591,6 @@ function updateDayOfWeekChart(activityData) {
       valueEl.textContent = value;
     }
   });
-}
-
-/**
- * Update code reviews section
- */
-function updateReviewsSection(reviewsData) {
-  if (!elements.reviewsContainer) return;
-  
-  // If no data from backend, show placeholder
-  if (!reviewsData) {
-    // Keep the placeholder visible
-    if (elements.reviewsPlaceholder) {
-      elements.reviewsPlaceholder.style.display = 'flex';
-    }
-    return;
-  }
-  
-  // Hide placeholder when we have data
-  if (elements.reviewsPlaceholder) {
-    elements.reviewsPlaceholder.style.display = 'none';
-  }
-  
-  const { totalReviews = 0, approvals = 0, changesRequested = 0, comments = 0 } = reviewsData;
-  
-  // Update stat values
-  if (elements.totalReviews) animateValue(elements.totalReviews, totalReviews);
-  if (elements.approvedReviews) animateValue(elements.approvedReviews, approvals);
-  if (elements.changesReviews) animateValue(elements.changesReviews, changesRequested);
-  if (elements.commentedReviews) animateValue(elements.commentedReviews, comments);
-  
-  // Update donut chart
-  if (elements.donutTotal) elements.donutTotal.textContent = totalReviews;
-  
-  // Calculate percentages for donut segments
-  const total = approvals + changesRequested + comments;
-  if (total > 0) {
-    const circumference = 314.159; // 2 * PI * 50
-    
-    const approvalPercent = approvals / total;
-    const changesPercent = changesRequested / total;
-    const commentPercent = comments / total;
-    
-    // Approved segment
-    if (elements.donutApproved) {
-      const approvalDash = approvalPercent * circumference;
-      elements.donutApproved.style.strokeDasharray = `${approvalDash} ${circumference}`;
-      elements.donutApproved.style.strokeDashoffset = '0';
-    }
-    
-    // Changes segment (starts after approved)
-    if (elements.donutChanges) {
-      const changesDash = changesPercent * circumference;
-      const changesOffset = -approvalPercent * circumference;
-      elements.donutChanges.style.strokeDasharray = `${changesDash} ${circumference}`;
-      elements.donutChanges.style.strokeDashoffset = changesOffset;
-    }
-    
-    // Comments segment (starts after approved + changes)
-    if (elements.donutCommented) {
-      const commentDash = commentPercent * circumference;
-      const commentOffset = -(approvalPercent + changesPercent) * circumference;
-      elements.donutCommented.style.strokeDasharray = `${commentDash} ${circumference}`;
-      elements.donutCommented.style.strokeDashoffset = commentOffset;
-    }
-  }
 }
 
 /**
@@ -793,14 +678,6 @@ function resetStats() {
   }
   if (elements.totalCreated) elements.totalCreated.textContent = '-';
   if (elements.totalMerged) elements.totalMerged.textContent = '-';
-  if (elements.totalReviewed) elements.totalReviewed.textContent = '-';
-  
-  // Reviews
-  if (elements.totalReviews) elements.totalReviews.textContent = '-';
-  if (elements.approvedReviews) elements.approvedReviews.textContent = '-';
-  if (elements.changesReviews) elements.changesReviews.textContent = '-';
-  if (elements.commentedReviews) elements.commentedReviews.textContent = '-';
-  if (elements.donutTotal) elements.donutTotal.textContent = '-';
 }
 
 /**
