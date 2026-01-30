@@ -595,6 +595,12 @@ function updateDayOfWeekChart(activityData) {
     }
     if (valueEl) {
       valueEl.textContent = value;
+      // Add zero class for styling
+      if (value === 0) {
+        valueEl.classList.add('zero');
+      } else {
+        valueEl.classList.remove('zero');
+      }
     }
   });
 }
