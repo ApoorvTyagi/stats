@@ -849,6 +849,547 @@ body {
   opacity: 1;
 }
 
+/* ==========================================
+   PR Success Rate Section
+   ========================================== */
+.success-rate-section {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  backdrop-filter: blur(10px);
+}
+
+.success-rate-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2xl);
+  flex-wrap: wrap;
+}
+
+.success-rate-gauge {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: var(--bg-tertiary);
+  stroke-width: 8;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke: var(--accent-green);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 339.292;
+  stroke-dashoffset: 339.292;
+  transition: stroke-dashoffset 1s ease-out, stroke 0.3s ease;
+}
+
+.gauge-fill.warning {
+  stroke: var(--accent-orange);
+}
+
+.gauge-fill.danger {
+  stroke: var(--accent-red);
+}
+
+.gauge-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-percentage {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gauge-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.success-rate-details {
+  flex: 1;
+  min-width: 200px;
+}
+
+.success-rate-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+.success-rate-breakdown {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breakdown-count {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.breakdown-item.merged .breakdown-count {
+  color: var(--accent-green);
+}
+
+.breakdown-item.closed .breakdown-count {
+  color: var(--accent-red);
+}
+
+.breakdown-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================
+   Section Header with Subtitle
+   ========================================== */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.section-header .section-subtitle {
+  margin-top: 0;
+}
+
+/* ==========================================
+   Horizontal Bar Chart for Repositories
+   ========================================== */
+.repos-bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.repo-bar-item {
+  display: grid;
+  grid-template-columns: 180px 1fr 60px;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.repo-bar-name {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.repo-bar-track {
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.repo-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 0.6s ease-out;
+  position: relative;
+  min-width: 4px;
+}
+
+.repo-bar-fill.excellent {
+  background: linear-gradient(90deg, var(--accent-green), #38f9d7);
+}
+
+.repo-bar-fill.good {
+  background: linear-gradient(90deg, var(--accent-blue), #00f2fe);
+}
+
+.repo-bar-fill.average {
+  background: linear-gradient(90deg, var(--accent-orange), #ffc107);
+}
+
+.repo-bar-fill.low {
+  background: linear-gradient(90deg, var(--accent-red), #ff6b6b);
+}
+
+.repo-bar-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* Repos Details Toggle */
+.repos-details-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-md);
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.toggle-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--transition-base);
+}
+
+.toggle-btn.expanded svg {
+  transform: rotate(180deg);
+}
+
+/* Collapsible Repos Grid */
+.repos-grid.collapsed {
+  display: none;
+}
+
+.repos-grid.expanded {
+  display: grid;
+  margin-top: var(--spacing-lg);
+}
+
+/* ==========================================
+   Day of Week Activity Chart
+   ========================================== */
+.day-of-week-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 200px;
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  gap: var(--spacing-sm);
+}
+
+.day-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.day-bar-fill {
+  width: 100%;
+  max-width: 50px;
+  background: linear-gradient(180deg, var(--accent-purple), var(--accent-blue));
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: height 0.6s ease-out;
+  height: var(--fill-height, 0%);
+  margin-top: auto;
+}
+
+.day-bar[data-day="Sat"] .day-bar-fill,
+.day-bar[data-day="Sun"] .day-bar-fill {
+  background: linear-gradient(180deg, var(--accent-pink), var(--accent-purple));
+  opacity: 0.7;
+}
+
+.day-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: var(--spacing-sm);
+}
+
+.day-value {
+  position: absolute;
+  top: -24px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.day-bar:hover .day-value {
+  opacity: 1;
+}
+
+.day-bar:hover .day-bar-fill {
+  filter: brightness(1.2);
+}
+
+.day-of-week-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+}
+
+.day-of-week-placeholder svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+.day-of-week-placeholder span {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ==========================================
+   Code Reviews Section
+   ========================================== */
+.reviews-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.reviews-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.review-stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition-base);
+}
+
+.review-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-purple);
+}
+
+.review-stat-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.review-stat-card.total-reviews .review-stat-icon {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  color: #a78bfa;
+}
+
+.review-stat-card.approvals .review-stat-icon {
+  background: linear-gradient(135deg, rgba(67, 233, 123, 0.2), rgba(56, 249, 215, 0.2));
+  color: var(--accent-green);
+}
+
+.review-stat-card.changes .review-stat-icon {
+  background: linear-gradient(135deg, rgba(210, 153, 34, 0.2), rgba(255, 193, 7, 0.2));
+  color: var(--accent-orange);
+}
+
+.review-stat-card.comments .review-stat-icon {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+  color: var(--accent-blue);
+}
+
+.review-stat-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.review-stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.review-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Reviews Donut Chart */
+.reviews-chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2xl);
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.reviews-donut {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-bg {
+  fill: none;
+  stroke: var(--bg-tertiary);
+  stroke-width: 16;
+}
+
+.donut-segment {
+  fill: none;
+  stroke-width: 16;
+  stroke-dasharray: 314.159;
+  stroke-dashoffset: 314.159;
+  transition: stroke-dashoffset 0.8s ease-out;
+}
+
+.donut-segment.approved {
+  stroke: var(--accent-green);
+}
+
+.donut-segment.changes {
+  stroke: var(--accent-orange);
+}
+
+.donut-segment.commented {
+  stroke: var(--accent-blue);
+}
+
+.donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.donut-total {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.donut-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.reviews-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.reviews-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.reviews-legend .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.reviews-legend .legend-color.approved {
+  background: var(--accent-green);
+}
+
+.reviews-legend .legend-color.changes {
+  background: var(--accent-orange);
+}
+
+.reviews-legend .legend-color.commented {
+  background: var(--accent-blue);
+}
+
+.reviews-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--glass-bg);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.reviews-placeholder svg {
+  width: 20px;
+  height: 20px;
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+.reviews-placeholder span {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-content {
@@ -895,5 +1436,58 @@ body {
   .banner-content {
     flex-direction: column;
     text-align: center;
+  }
+  
+  .success-rate-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .success-rate-breakdown {
+    justify-content: center;
+  }
+  
+  .repo-bar-item {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .repo-bar-name {
+    text-align: left;
+  }
+  
+  .repo-bar-count {
+    text-align: left;
+    margin-top: -8px;
+  }
+  
+  .day-of-week-chart {
+    height: 150px;
+    padding: var(--spacing-md);
+  }
+  
+  .day-bar-fill {
+    max-width: 30px;
+  }
+  
+  .day-label {
+    font-size: 0.65rem;
+  }
+  
+  .reviews-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .reviews-chart-container {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .reviews-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing-md);
   }
 }

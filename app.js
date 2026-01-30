@@ -82,9 +82,33 @@ const elements = {
   chart: document.getElementById('chart'),
   chartLegend: document.getElementById('chartLegend'),
   reposGrid: document.getElementById('reposGrid'),
+  reposBarChart: document.getElementById('reposBarChart'),
+  toggleRepoDetails: document.getElementById('toggleRepoDetails'),
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
-  toastMessage: document.getElementById('toastMessage')
+  toastMessage: document.getElementById('toastMessage'),
+  
+  // Success Rate elements
+  successRate: document.getElementById('successRate'),
+  successGaugeFill: document.getElementById('successGaugeFill'),
+  successMerged: document.getElementById('successMerged'),
+  successClosed: document.getElementById('successClosed'),
+  
+  // Day of Week elements
+  dayOfWeekChart: document.getElementById('dayOfWeekChart'),
+  dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder'),
+  
+  // Reviews elements
+  reviewsContainer: document.getElementById('reviewsContainer'),
+  reviewsPlaceholder: document.getElementById('reviewsPlaceholder'),
+  totalReviews: document.getElementById('totalReviews'),
+  approvedReviews: document.getElementById('approvedReviews'),
+  changesReviews: document.getElementById('changesReviews'),
+  commentedReviews: document.getElementById('commentedReviews'),
+  donutApproved: document.getElementById('donutApproved'),
+  donutChanges: document.getElementById('donutChanges'),
+  donutCommented: document.getElementById('donutCommented'),
+  donutTotal: document.getElementById('donutTotal')
 };
 
 /**
@@ -106,6 +130,9 @@ async function init() {
 
     // Setup click handler for Open PRs card
     setupOpenPRsCardClick();
+    
+    // Setup toggle for repo details
+    setupRepoDetailsToggle();
 
     // Load aggregate stats
     await loadAggregateStats();
@@ -147,6 +174,29 @@ function setupOpenPRsCardClick() {
 }
 
 /**
+ * Setup toggle for repository details view
+ */
+function setupRepoDetailsToggle() {
+  if (elements.toggleRepoDetails && elements.reposGrid) {
+    elements.toggleRepoDetails.addEventListener('click', () => {
+      const isExpanded = elements.reposGrid.classList.contains('expanded');
+      
+      if (isExpanded) {
+        elements.reposGrid.classList.remove('expanded');
+        elements.reposGrid.classList.add('collapsed');
+        elements.toggleRepoDetails.classList.remove('expanded');
+        elements.toggleRepoDetails.querySelector('span').textContent = 'Show detailed view';
+      } else {
+        elements.reposGrid.classList.remove('collapsed');
+        elements.reposGrid.classList.add('expanded');
+        elements.toggleRepoDetails.classList.add('expanded');
+        elements.toggleRepoDetails.querySelector('span').textContent = 'Hide detailed view';
+      }
+    });
+  }
+}
+
+/**
  * Load aggregate stats across all repositories
  */
 async function loadAggregateStats() {
@@ -159,10 +209,11 @@ async function loadAggregateStats() {
 
     const data = await response.json();
 
-
-
     // Update PR stats
     updatePRStats(data.prStats);
+    
+    // Update success rate
+    updateSuccessRate(data.prStats);
 
     // Update merge time metrics
     updateMergeMetrics(data.mergeMetrics);
@@ -170,8 +221,15 @@ async function loadAggregateStats() {
     // Update chart
     updateChart(data.mergeMetrics);
 
-    // Update top repos
+    // Update top repos (both bar chart and grid)
     updateTopRepos(data.contributedRepos);
+    updateReposBarChart(data.contributedRepos);
+    
+    // Update day of week chart (placeholder - backend data not yet available)
+    updateDayOfWeekChart(data.activityByDay);
+    
+    // Update reviews section (placeholder - backend data not yet available)
+    updateReviewsSection(data.reviews);
 
   } catch (error) {
     showError('Could not load stats: ' + error.message);
@@ -329,6 +387,202 @@ function updateTopRepos(repos) {
 }
 
 /**
+ * Update PR success rate display
+ */
+function updateSuccessRate(stats) {
+  if (!elements.successRate || !elements.successGaugeFill) return;
+  
+  const merged = stats.merged || 0;
+  const closed = stats.closed || 0;
+  const total = merged + closed;
+  
+  if (total === 0) {
+    elements.successRate.textContent = '-';
+    elements.successMerged.textContent = '-';
+    elements.successClosed.textContent = '-';
+    return;
+  }
+  
+  const rate = Math.round((merged / total) * 100);
+  
+  // Update display values
+  elements.successRate.textContent = `${rate}%`;
+  elements.successMerged.textContent = merged;
+  elements.successClosed.textContent = closed;
+  
+  // Update gauge fill
+  // Circle circumference = 2 * PI * r = 2 * 3.14159 * 54 = 339.292
+  const circumference = 339.292;
+  const offset = circumference - (rate / 100) * circumference;
+  elements.successGaugeFill.style.strokeDashoffset = offset;
+  
+  // Color based on rate
+  elements.successGaugeFill.classList.remove('warning', 'danger');
+  if (rate < 60) {
+    elements.successGaugeFill.classList.add('danger');
+  } else if (rate < 80) {
+    elements.successGaugeFill.classList.add('warning');
+  }
+}
+
+/**
+ * Update horizontal bar chart for repositories
+ */
+function updateReposBarChart(repos) {
+  if (!elements.reposBarChart) return;
+  
+  if (!repos || repos.length === 0) {
+    elements.reposBarChart.innerHTML = `
+      <div class="chart-placeholder">
+        <span>No contributed repositories found</span>
+      </div>
+    `;
+    return;
+  }
+  
+  // Sort by merged count (descending)
+  const sortedRepos = [...repos].sort((a, b) => b.mergedCount - a.mergedCount);
+  
+  // Take top 10
+  const topRepos = sortedRepos.slice(0, 10);
+  
+  // Find max for scaling
+  const maxMerged = Math.max(...topRepos.map(r => r.mergedCount));
+  
+  elements.reposBarChart.innerHTML = topRepos.map(repo => {
+    const percentage = maxMerged > 0 ? (repo.mergedCount / maxMerged) * 100 : 0;
+    const mergeRate = repo.prCount > 0 ? (repo.mergedCount / repo.prCount) * 100 : 0;
+    
+    // Determine color class based on merge rate
+    let colorClass = 'low';
+    if (mergeRate >= 80) colorClass = 'excellent';
+    else if (mergeRate >= 60) colorClass = 'good';
+    else if (mergeRate >= 40) colorClass = 'average';
+    
+    const repoName = repo.fullName.split('/')[1] || repo.fullName;
+    
+    return `
+      <div class="repo-bar-item">
+        <span class="repo-bar-name" title="${repo.fullName}">${repoName}</span>
+        <div class="repo-bar-track">
+          <div class="repo-bar-fill ${colorClass}" style="width: ${percentage}%"></div>
+        </div>
+        <span class="repo-bar-count">${repo.mergedCount}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Update day of week activity chart
+ */
+function updateDayOfWeekChart(activityData) {
+  if (!elements.dayOfWeekChart) return;
+  
+  // If no data from backend, show placeholder
+  if (!activityData) {
+    // Keep the placeholder visible
+    if (elements.dayOfWeekPlaceholder) {
+      elements.dayOfWeekPlaceholder.style.display = 'flex';
+    }
+    return;
+  }
+  
+  // Hide placeholder when we have data
+  if (elements.dayOfWeekPlaceholder) {
+    elements.dayOfWeekPlaceholder.style.display = 'none';
+  }
+  
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  
+  const values = dayKeys.map(key => activityData[key] || 0);
+  const maxValue = Math.max(...values, 1);
+  
+  const dayBars = elements.dayOfWeekChart.querySelectorAll('.day-bar');
+  
+  dayBars.forEach((bar, index) => {
+    const value = values[index];
+    const percentage = (value / maxValue) * 80; // Max 80% height
+    
+    const fill = bar.querySelector('.day-bar-fill');
+    const valueEl = bar.querySelector('.day-value');
+    
+    if (fill) {
+      fill.style.setProperty('--fill-height', `${percentage}%`);
+    }
+    if (valueEl) {
+      valueEl.textContent = value;
+    }
+  });
+}
+
+/**
+ * Update code reviews section
+ */
+function updateReviewsSection(reviewsData) {
+  if (!elements.reviewsContainer) return;
+  
+  // If no data from backend, show placeholder
+  if (!reviewsData) {
+    // Keep the placeholder visible
+    if (elements.reviewsPlaceholder) {
+      elements.reviewsPlaceholder.style.display = 'flex';
+    }
+    return;
+  }
+  
+  // Hide placeholder when we have data
+  if (elements.reviewsPlaceholder) {
+    elements.reviewsPlaceholder.style.display = 'none';
+  }
+  
+  const { totalReviews = 0, approvals = 0, changesRequested = 0, comments = 0 } = reviewsData;
+  
+  // Update stat values
+  if (elements.totalReviews) animateValue(elements.totalReviews, totalReviews);
+  if (elements.approvedReviews) animateValue(elements.approvedReviews, approvals);
+  if (elements.changesReviews) animateValue(elements.changesReviews, changesRequested);
+  if (elements.commentedReviews) animateValue(elements.commentedReviews, comments);
+  
+  // Update donut chart
+  if (elements.donutTotal) elements.donutTotal.textContent = totalReviews;
+  
+  // Calculate percentages for donut segments
+  const total = approvals + changesRequested + comments;
+  if (total > 0) {
+    const circumference = 314.159; // 2 * PI * 50
+    
+    const approvalPercent = approvals / total;
+    const changesPercent = changesRequested / total;
+    const commentPercent = comments / total;
+    
+    // Approved segment
+    if (elements.donutApproved) {
+      const approvalDash = approvalPercent * circumference;
+      elements.donutApproved.style.strokeDasharray = `${approvalDash} ${circumference}`;
+      elements.donutApproved.style.strokeDashoffset = '0';
+    }
+    
+    // Changes segment (starts after approved)
+    if (elements.donutChanges) {
+      const changesDash = changesPercent * circumference;
+      const changesOffset = -approvalPercent * circumference;
+      elements.donutChanges.style.strokeDasharray = `${changesDash} ${circumference}`;
+      elements.donutChanges.style.strokeDashoffset = changesOffset;
+    }
+    
+    // Comments segment (starts after approved + changes)
+    if (elements.donutCommented) {
+      const commentDash = commentPercent * circumference;
+      const commentOffset = -(approvalPercent + changesPercent) * circumference;
+      elements.donutCommented.style.strokeDasharray = `${commentDash} ${circumference}`;
+      elements.donutCommented.style.strokeDashoffset = commentOffset;
+    }
+  }
+}
+
+/**
  * Format time value for display
  */
 function formatTimeShort(hours) {
@@ -367,24 +621,54 @@ function animateValue(element, newValue) {
  * Reset stats to default state
  */
 function resetStats() {
-
-  elements.totalPRs.textContent = '-';
-  elements.openPRs.textContent = '-';
-  elements.mergedPRs.textContent = '-';
-  elements.closedPRs.textContent = '-';
-  elements.avgTime.textContent = '-';
-  elements.p50Time.textContent = '-';
-  elements.p95Time.textContent = '-';
-  elements.p99Time.textContent = '-';
-  elements.chart.innerHTML = `
-    <div class="chart-placeholder">
-      <span>Unable to load chart</span>
-    </div>
-  `;
-  elements.chartLegend.innerHTML = '';
-  elements.reposGrid.innerHTML = `
-    <div class="repo-placeholder">Unable to load repositories</div>
-  `;
+  // PR Stats
+  if (elements.totalPRs) elements.totalPRs.textContent = '-';
+  if (elements.openPRs) elements.openPRs.textContent = '-';
+  if (elements.mergedPRs) elements.mergedPRs.textContent = '-';
+  if (elements.closedPRs) elements.closedPRs.textContent = '-';
+  
+  // Merge Metrics
+  if (elements.avgTime) elements.avgTime.textContent = '-';
+  if (elements.p50Time) elements.p50Time.textContent = '-';
+  if (elements.p95Time) elements.p95Time.textContent = '-';
+  if (elements.p99Time) elements.p99Time.textContent = '-';
+  
+  // Chart
+  if (elements.chart) {
+    elements.chart.innerHTML = `
+      <div class="chart-placeholder">
+        <span>Unable to load chart</span>
+      </div>
+    `;
+  }
+  if (elements.chartLegend) elements.chartLegend.innerHTML = '';
+  
+  // Repos
+  if (elements.reposGrid) {
+    elements.reposGrid.innerHTML = `
+      <div class="repo-placeholder">Unable to load repositories</div>
+    `;
+  }
+  if (elements.reposBarChart) {
+    elements.reposBarChart.innerHTML = `
+      <div class="chart-placeholder">
+        <span>Unable to load chart</span>
+      </div>
+    `;
+  }
+  
+  // Success Rate
+  if (elements.successRate) elements.successRate.textContent = '-';
+  if (elements.successMerged) elements.successMerged.textContent = '-';
+  if (elements.successClosed) elements.successClosed.textContent = '-';
+  if (elements.successGaugeFill) elements.successGaugeFill.style.strokeDashoffset = '339.292';
+  
+  // Reviews
+  if (elements.totalReviews) elements.totalReviews.textContent = '-';
+  if (elements.approvedReviews) elements.approvedReviews.textContent = '-';
+  if (elements.changesReviews) elements.changesReviews.textContent = '-';
+  if (elements.commentedReviews) elements.commentedReviews.textContent = '-';
+  if (elements.donutTotal) elements.donutTotal.textContent = '-';
 }
 
 /**

@@ -162,11 +162,203 @@
         </div>
       </section>
 
+      <!-- PR Success Rate -->
+      <section class="stats-section success-rate-section">
+        <h2 class="section-title">PR Success Rate</h2>
+        <div class="success-rate-container">
+          <div class="success-rate-gauge">
+            <svg class="gauge-svg" viewBox="0 0 120 120">
+              <circle class="gauge-bg" cx="60" cy="60" r="54" />
+              <circle class="gauge-fill" id="successGaugeFill" cx="60" cy="60" r="54" />
+            </svg>
+            <div class="gauge-value">
+              <span class="gauge-percentage" id="successRate">-</span>
+              <span class="gauge-label">Merge Rate</span>
+            </div>
+          </div>
+          <div class="success-rate-details">
+            <p class="success-rate-description">Percentage of PRs that were successfully merged vs closed without merging</p>
+            <div class="success-rate-breakdown">
+              <div class="breakdown-item merged">
+                <span class="breakdown-count" id="successMerged">-</span>
+                <span class="breakdown-label">Merged</span>
+              </div>
+              <div class="breakdown-item closed">
+                <span class="breakdown-count" id="successClosed">-</span>
+                <span class="breakdown-label">Closed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Top Repositories -->
       <section class="stats-section">
-        <h2 class="section-title">Top Repositories</h2>
-        <div class="repos-grid" id="reposGrid">
+        <div class="section-header">
+          <h2 class="section-title">Top Repositories</h2>
+          <p class="section-subtitle">Repositories ranked by merged PRs</p>
+        </div>
+        
+        <!-- Horizontal Bar Chart -->
+        <div class="repos-bar-chart" id="reposBarChart">
+          <div class="chart-placeholder">Loading chart...</div>
+        </div>
+        
+        <!-- Detailed Repository Cards -->
+        <div class="repos-details-toggle">
+          <button class="toggle-btn" id="toggleRepoDetails">
+            <span>Show detailed view</span>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="repos-grid collapsed" id="reposGrid">
           <div class="repo-placeholder">Loading repositories...</div>
+        </div>
+      </section>
+
+      <!-- Day of Week Activity -->
+      <section class="stats-section chart-section">
+        <h2 class="section-title">Activity by Day of Week</h2>
+        <p class="section-subtitle">When you're most active creating PRs</p>
+        <div class="day-of-week-chart" id="dayOfWeekChart">
+          <div class="day-bar" data-day="Mon">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Mon</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Tue">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Tue</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Wed">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Wed</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Thu">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Thu</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Fri">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Fri</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Sat">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Sat</span>
+            <span class="day-value">-</span>
+          </div>
+          <div class="day-bar" data-day="Sun">
+            <div class="day-bar-fill" style="--fill-height: 0%"></div>
+            <span class="day-label">Sun</span>
+            <span class="day-value">-</span>
+          </div>
+        </div>
+        <div class="day-of-week-placeholder" id="dayOfWeekPlaceholder">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+          <span>Activity data will be available once the backend is updated</span>
+        </div>
+      </section>
+
+      <!-- Code Reviews Section -->
+      <section class="stats-section">
+        <div class="section-header">
+          <h2 class="section-title">Code Reviews</h2>
+          <p class="section-subtitle">Reviews you've given on others' PRs</p>
+        </div>
+        <div class="reviews-container" id="reviewsContainer">
+          <!-- Reviews Stats Cards -->
+          <div class="reviews-stats">
+            <div class="review-stat-card total-reviews">
+              <div class="review-stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </div>
+              <div class="review-stat-content">
+                <span class="review-stat-value" id="totalReviews">-</span>
+                <span class="review-stat-label">Total Reviews</span>
+              </div>
+            </div>
+            <div class="review-stat-card approvals">
+              <div class="review-stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+              </div>
+              <div class="review-stat-content">
+                <span class="review-stat-value" id="approvedReviews">-</span>
+                <span class="review-stat-label">Approved</span>
+              </div>
+            </div>
+            <div class="review-stat-card changes">
+              <div class="review-stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </div>
+              <div class="review-stat-content">
+                <span class="review-stat-value" id="changesReviews">-</span>
+                <span class="review-stat-label">Changes Requested</span>
+              </div>
+            </div>
+            <div class="review-stat-card comments">
+              <div class="review-stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                </svg>
+              </div>
+              <div class="review-stat-content">
+                <span class="review-stat-value" id="commentedReviews">-</span>
+                <span class="review-stat-label">Commented</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Reviews Breakdown Chart -->
+          <div class="reviews-chart-container">
+            <div class="reviews-donut" id="reviewsDonut">
+              <svg viewBox="0 0 120 120" class="donut-svg">
+                <circle class="donut-bg" cx="60" cy="60" r="50"/>
+                <circle class="donut-segment approved" id="donutApproved" cx="60" cy="60" r="50"/>
+                <circle class="donut-segment changes" id="donutChanges" cx="60" cy="60" r="50"/>
+                <circle class="donut-segment commented" id="donutCommented" cx="60" cy="60" r="50"/>
+              </svg>
+              <div class="donut-center">
+                <span class="donut-total" id="donutTotal">-</span>
+                <span class="donut-label">Reviews</span>
+              </div>
+            </div>
+            <div class="reviews-legend">
+              <div class="legend-item">
+                <span class="legend-color approved"></span>
+                <span>Approved</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color changes"></span>
+                <span>Changes Requested</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color commented"></span>
+                <span>Commented</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Placeholder for backend data -->
+          <div class="reviews-placeholder" id="reviewsPlaceholder">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <span>Code review data will be available once the backend is updated</span>
+          </div>
         </div>
       </section>
     </main>
