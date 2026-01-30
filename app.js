@@ -88,6 +88,16 @@ const elements = {
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
   
+  // Activity Timeline elements
+  activityChart: document.getElementById('activityChart'),
+  activityPeriod: document.getElementById('activityPeriod'),
+  totalCreated: document.getElementById('totalCreated'),
+  totalMerged: document.getElementById('totalMerged'),
+  totalReviewed: document.getElementById('totalReviewed'),
+  trendCreated: document.getElementById('trendCreated'),
+  trendMerged: document.getElementById('trendMerged'),
+  trendReviewed: document.getElementById('trendReviewed'),
+  
   // Day of Week elements
   dayOfWeekChart: document.getElementById('dayOfWeekChart'),
   dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder'),
@@ -274,10 +284,130 @@ async function loadActivityData() {
  * Update activity timeline (from /api/activity endpoint)
  */
 function updateActivityTimeline(activityData) {
-  if (!activityData || !activityData.timeline) return;
+  if (!activityData || !activityData.timeline) {
+    if (elements.activityChart) {
+      elements.activityChart.innerHTML = `
+        <div class="chart-placeholder">
+          <span>No activity data available</span>
+        </div>
+      `;
+    }
+    return;
+  }
   
-  // Activity timeline data is available for future features
-  console.log('Activity timeline loaded:', activityData.period, 'with', activityData.timeline.length, 'data points');
+  // Update period text
+  if (elements.activityPeriod) {
+    const periodMap = {
+      '3months': '3 months',
+      '6months': '6 months',
+      '1year': '1 year'
+    };
+    elements.activityPeriod.textContent = periodMap[activityData.period] || activityData.period;
+  }
+  
+  // Update totals
+  if (activityData.totals) {
+    if (elements.totalCreated) animateValue(elements.totalCreated, activityData.totals.created || 0);
+    if (elements.totalMerged) animateValue(elements.totalMerged, activityData.totals.merged || 0);
+    if (elements.totalReviewed) animateValue(elements.totalReviewed, activityData.totals.reviewed || 0);
+  }
+  
+  // Update trends
+  if (activityData.trend) {
+    updateTrendIndicator(elements.trendCreated, activityData.trend.created);
+    updateTrendIndicator(elements.trendMerged, activityData.trend.merged);
+    updateTrendIndicator(elements.trendReviewed, activityData.trend.reviewed);
+  }
+  
+  // Render chart
+  renderActivityChart(activityData.timeline);
+}
+
+/**
+ * Update trend indicator element
+ */
+function updateTrendIndicator(element, trendValue) {
+  if (!element) return;
+  
+  const trendEl = element.querySelector('.trend-value');
+  if (!trendEl) return;
+  
+  element.classList.remove('up', 'down', 'neutral');
+  
+  if (trendValue > 0) {
+    element.classList.add('up');
+    trendEl.textContent = `↑ ${Math.round(trendValue)}%`;
+  } else if (trendValue < 0) {
+    element.classList.add('down');
+    trendEl.textContent = `↓ ${Math.abs(Math.round(trendValue))}%`;
+  } else {
+    element.classList.add('neutral');
+    trendEl.textContent = '—';
+  }
+}
+
+/**
+ * Render activity timeline chart
+ */
+function renderActivityChart(timeline) {
+  if (!elements.activityChart || !timeline || timeline.length === 0) return;
+  
+  // Find max value for scaling
+  const maxValue = Math.max(
+    ...timeline.map(w => Math.max(w.created || 0, w.merged || 0, w.reviewed || 0)),
+    1
+  );
+  
+  const chartHeight = 160; // pixels for bar area
+  
+  // Generate bar groups
+  const barsHtml = timeline.map((week, index) => {
+    const createdHeight = ((week.created || 0) / maxValue) * chartHeight;
+    const mergedHeight = ((week.merged || 0) / maxValue) * chartHeight;
+    const reviewedHeight = ((week.reviewed || 0) / maxValue) * chartHeight;
+    
+    // Format date for label (show month for first week of each month)
+    const date = new Date(week.date);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const showLabel = index === 0 || date.getDate() <= 7;
+    const label = showLabel ? monthNames[date.getMonth()] : '';
+    
+    // Format tooltip date
+    const tooltipDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    return `
+      <div class="activity-bar-group">
+        <div class="activity-bar-tooltip">
+          <div class="tooltip-date">Week of ${tooltipDate}</div>
+          <div class="tooltip-row created">Created: ${week.created || 0}</div>
+          <div class="tooltip-row merged">Merged: ${week.merged || 0}</div>
+          <div class="tooltip-row reviewed">Reviewed: ${week.reviewed || 0}</div>
+        </div>
+        <div class="activity-bars">
+          <div class="activity-bar created" style="height: ${Math.max(createdHeight, 2)}px"></div>
+          <div class="activity-bar merged" style="height: ${Math.max(mergedHeight, 2)}px"></div>
+          <div class="activity-bar reviewed" style="height: ${Math.max(reviewedHeight, 2)}px"></div>
+        </div>
+        ${label ? `<span class="activity-bar-label">${label}</span>` : ''}
+      </div>
+    `;
+  }).join('');
+  
+  // Generate Y-axis labels
+  const yAxisHtml = `
+    <div class="activity-chart-yaxis">
+      <span class="yaxis-label">${maxValue}</span>
+      <span class="yaxis-label">${Math.round(maxValue / 2)}</span>
+      <span class="yaxis-label">0</span>
+    </div>
+  `;
+  
+  elements.activityChart.innerHTML = `
+    ${yAxisHtml}
+    <div class="activity-chart-inner" style="margin-left: 35px;">
+      ${barsHtml}
+    </div>
+  `;
 }
 
 /**
@@ -660,6 +790,18 @@ function resetStats() {
       </div>
     `;
   }
+  
+  // Activity Timeline
+  if (elements.activityChart) {
+    elements.activityChart.innerHTML = `
+      <div class="chart-placeholder">
+        <span>Unable to load activity</span>
+      </div>
+    `;
+  }
+  if (elements.totalCreated) elements.totalCreated.textContent = '-';
+  if (elements.totalMerged) elements.totalMerged.textContent = '-';
+  if (elements.totalReviewed) elements.totalReviewed.textContent = '-';
   
   // Reviews
   if (elements.totalReviews) elements.totalReviews.textContent = '-';
