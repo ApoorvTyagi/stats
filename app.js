@@ -195,12 +195,8 @@ function setupRepoDetailsToggle() {
  */
 async function loadAggregateStats() {
   try {
-    // Fetch all data in parallel for better performance
-    const [aggregateResponse, reviewsResponse, activityResponse] = await Promise.all([
-      fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`),
-      fetch(`${API_BASE_URL}/reviews?username=${encodeURIComponent(GITHUB_USERNAME)}`).catch(() => null),
-      fetch(`${API_BASE_URL}/activity?username=${encodeURIComponent(GITHUB_USERNAME)}`).catch(() => null)
-    ]);
+    // Fetch aggregate stats first (required)
+    const aggregateResponse = await fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`);
 
     if (!aggregateResponse.ok) {
       throw new Error('Failed to fetch aggregate stats');
@@ -224,23 +220,53 @@ async function loadAggregateStats() {
     // Update day of week chart from aggregate data
     updateDayOfWeekChart(data.activityByDay);
     
-    // Process reviews data from new endpoint
-    if (reviewsResponse && reviewsResponse.ok) {
-      const reviewsData = await reviewsResponse.json();
-      updateReviewsSection(reviewsData);
-    } else {
-      updateReviewsSection(null);
-    }
+    // Fetch reviews data from new endpoint
+    loadReviewsData();
     
-    // Process activity timeline data from new endpoint
-    if (activityResponse && activityResponse.ok) {
-      const activityData = await activityResponse.json();
-      updateActivityTimeline(activityData);
-    }
+    // Fetch activity timeline from new endpoint
+    loadActivityData();
 
   } catch (error) {
     showError('Could not load stats: ' + error.message);
     resetStats();
+  }
+}
+
+/**
+ * Load reviews data from /api/reviews endpoint
+ */
+async function loadReviewsData() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/reviews?username=${encodeURIComponent(GITHUB_USERNAME)}`);
+    
+    if (response.ok) {
+      const reviewsData = await response.json();
+      updateReviewsSection(reviewsData);
+    } else {
+      console.warn('Reviews API returned status:', response.status);
+      updateReviewsSection(null);
+    }
+  } catch (error) {
+    console.warn('Failed to load reviews:', error.message);
+    updateReviewsSection(null);
+  }
+}
+
+/**
+ * Load activity timeline from /api/activity endpoint
+ */
+async function loadActivityData() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/activity?username=${encodeURIComponent(GITHUB_USERNAME)}`);
+    
+    if (response.ok) {
+      const activityData = await response.json();
+      updateActivityTimeline(activityData);
+    } else {
+      console.warn('Activity API returned status:', response.status);
+    }
+  } catch (error) {
+    console.warn('Failed to load activity:', error.message);
   }
 }
 
@@ -251,7 +277,6 @@ function updateActivityTimeline(activityData) {
   if (!activityData || !activityData.timeline) return;
   
   // Activity timeline data is available for future features
-  // Currently used for trend indicators if needed
   console.log('Activity timeline loaded:', activityData.period, 'with', activityData.timeline.length, 'data points');
 }
 
