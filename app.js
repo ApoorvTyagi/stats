@@ -195,13 +195,18 @@ function setupRepoDetailsToggle() {
  */
 async function loadAggregateStats() {
   try {
-    const response = await fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`);
+    // Fetch all data in parallel for better performance
+    const [aggregateResponse, reviewsResponse, activityResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`),
+      fetch(`${API_BASE_URL}/reviews?username=${encodeURIComponent(GITHUB_USERNAME)}`).catch(() => null),
+      fetch(`${API_BASE_URL}/activity?username=${encodeURIComponent(GITHUB_USERNAME)}`).catch(() => null)
+    ]);
 
-    if (!response.ok) {
+    if (!aggregateResponse.ok) {
       throw new Error('Failed to fetch aggregate stats');
     }
 
-    const data = await response.json();
+    const data = await aggregateResponse.json();
 
     // Update PR stats
     updatePRStats(data.prStats);
@@ -216,16 +221,38 @@ async function loadAggregateStats() {
     updateTopRepos(data.contributedRepos);
     updateReposBarChart(data.contributedRepos);
     
-    // Update day of week chart (placeholder - backend data not yet available)
+    // Update day of week chart from aggregate data
     updateDayOfWeekChart(data.activityByDay);
     
-    // Update reviews section (placeholder - backend data not yet available)
-    updateReviewsSection(data.reviews);
+    // Process reviews data from new endpoint
+    if (reviewsResponse && reviewsResponse.ok) {
+      const reviewsData = await reviewsResponse.json();
+      updateReviewsSection(reviewsData);
+    } else {
+      updateReviewsSection(null);
+    }
+    
+    // Process activity timeline data from new endpoint
+    if (activityResponse && activityResponse.ok) {
+      const activityData = await activityResponse.json();
+      updateActivityTimeline(activityData);
+    }
 
   } catch (error) {
     showError('Could not load stats: ' + error.message);
     resetStats();
   }
+}
+
+/**
+ * Update activity timeline (from /api/activity endpoint)
+ */
+function updateActivityTimeline(activityData) {
+  if (!activityData || !activityData.timeline) return;
+  
+  // Activity timeline data is available for future features
+  // Currently used for trend indicators if needed
+  console.log('Activity timeline loaded:', activityData.period, 'with', activityData.timeline.length, 'data points');
 }
 
 /**
