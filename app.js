@@ -316,7 +316,7 @@ function renderActivityChart(timeline) {
     1
   );
   
-  const chartHeight = 140; // pixels for bar area
+  const chartHeight = 150; // pixels for bar area
   
   // Generate bar groups
   const barsHtml = timeline.map((week) => {
@@ -331,12 +331,18 @@ function renderActivityChart(timeline) {
       <div class="activity-bar-group">
         <div class="activity-bar-tooltip">
           <div class="tooltip-date">Week of ${label}</div>
-          <div class="tooltip-row created">Created: ${week.created || 0}</div>
-          <div class="tooltip-row merged">Merged: ${week.merged || 0}</div>
+          <div class="tooltip-row created">
+            <span>Created</span>
+            <span>${week.created || 0}</span>
+          </div>
+          <div class="tooltip-row merged">
+            <span>Merged</span>
+            <span>${week.merged || 0}</span>
+          </div>
         </div>
         <div class="activity-bars">
-          <div class="activity-bar created" style="height: ${Math.max(createdHeight, 2)}px"></div>
-          <div class="activity-bar merged" style="height: ${Math.max(mergedHeight, 2)}px"></div>
+          <div class="activity-bar created" style="height: ${Math.max(createdHeight, 4)}px"></div>
+          <div class="activity-bar merged" style="height: ${Math.max(mergedHeight, 4)}px"></div>
         </div>
         <span class="activity-bar-label">${label}</span>
       </div>
@@ -354,7 +360,7 @@ function renderActivityChart(timeline) {
   
   elements.activityChart.innerHTML = `
     ${yAxisHtml}
-    <div class="activity-chart-inner" style="margin-left: 35px;">
+    <div class="activity-chart-inner" style="margin-left: 40px;">
       ${barsHtml}
     </div>
   `;

@@ -9,14 +9,25 @@ A beautiful, modern dashboard to view your GitHub PR statistics and merge time m
 ### Core Dashboard
 - 📊 **PR Statistics** - View total, open, merged, and closed PRs across all repositories
 - ⏱️ **Merge Time Metrics** - Track Average, P50, P95, and P99 merge times
-- 📈 **Visual Chart** - See merge time distribution at a glance
-- 🗂️ **Top Repositories** - View your most contributed repositories sorted by PR count
+- 📈 **Merge Time Distribution** - Visual chart showing merge time percentiles
+- 🗂️ **Top Repositories** - Horizontal bar chart showing top 5 repositories by merged PRs
+
+### Activity Timeline
+- 📅 **Weekly Activity** - View PR activity over the last 4 weeks
+- 📊 **Created vs Merged** - Side-by-side comparison of PRs created and merged each week
+- 📈 **Trend Indicators** - See percentage change compared to previous period
+- 💡 **Interactive Tooltips** - Hover over bars to see detailed weekly stats
+
+### Day of Week Analysis
+- 📆 **Activity Patterns** - See which days you're most active creating PRs
+- 🎨 **Visual Heatmap** - Color-coded bars showing activity distribution
 
 ### Open Pull Requests Page
 - 📋 **Detailed PR List** - View all open pull requests in one place
 - 🔍 **Search & Filter** - Search PRs by title, repository, or author
 - 🔄 **Sorting** - Sort by newest, oldest, or by repository
 - 🔗 **Quick Links** - Click any PR to open it directly on GitHub
+- ✨ **Clickable Open Card** - Click the "Open" stat card on the dashboard to navigate directly
 
 
 ## Usage
@@ -94,7 +105,6 @@ Then open `http://localhost:8080` in your browser.
 - **Design**: Glassmorphism, CSS Grid, CSS Variables
 - **Hosting**: GitHub Pages
 
-> **Note**: The backend API is hosted separately for security purposes.
 
 ## Contributing
 
