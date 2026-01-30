@@ -585,21 +585,13 @@ function updateReposBarChart(repos) {
   
   elements.reposBarChart.innerHTML = topRepos.map(repo => {
     const percentage = maxMerged > 0 ? (repo.mergedCount / maxMerged) * 100 : 0;
-    const mergeRate = repo.prCount > 0 ? (repo.mergedCount / repo.prCount) * 100 : 0;
-    
-    // Determine color class based on merge rate
-    let colorClass = 'low';
-    if (mergeRate >= 80) colorClass = 'excellent';
-    else if (mergeRate >= 60) colorClass = 'good';
-    else if (mergeRate >= 40) colorClass = 'average';
-    
     const repoName = repo.fullName.split('/')[1] || repo.fullName;
     
     return `
       <div class="repo-bar-item">
         <span class="repo-bar-name" title="${repo.fullName}">${repoName}</span>
         <div class="repo-bar-track">
-          <div class="repo-bar-fill ${colorClass}" style="width: ${percentage}%"></div>
+          <div class="repo-bar-fill" style="width: ${percentage}%"></div>
         </div>
         <span class="repo-bar-count">${repo.mergedCount}</span>
       </div>
