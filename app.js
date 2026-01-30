@@ -88,12 +88,6 @@ const elements = {
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
   
-  // Success Rate elements
-  successRate: document.getElementById('successRate'),
-  successGaugeFill: document.getElementById('successGaugeFill'),
-  successMerged: document.getElementById('successMerged'),
-  successClosed: document.getElementById('successClosed'),
-  
   // Day of Week elements
   dayOfWeekChart: document.getElementById('dayOfWeekChart'),
   dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder'),
@@ -211,9 +205,6 @@ async function loadAggregateStats() {
 
     // Update PR stats
     updatePRStats(data.prStats);
-    
-    // Update success rate
-    updateSuccessRate(data.prStats);
 
     // Update merge time metrics
     updateMergeMetrics(data.mergeMetrics);
@@ -384,45 +375,6 @@ function updateTopRepos(repos) {
       </div>
     </div>
   `).join('');
-}
-
-/**
- * Update PR success rate display
- */
-function updateSuccessRate(stats) {
-  if (!elements.successRate || !elements.successGaugeFill) return;
-  
-  const merged = stats.merged || 0;
-  const closed = stats.closed || 0;
-  const total = merged + closed;
-  
-  if (total === 0) {
-    elements.successRate.textContent = '-';
-    elements.successMerged.textContent = '-';
-    elements.successClosed.textContent = '-';
-    return;
-  }
-  
-  const rate = Math.round((merged / total) * 100);
-  
-  // Update display values
-  elements.successRate.textContent = `${rate}%`;
-  elements.successMerged.textContent = merged;
-  elements.successClosed.textContent = closed;
-  
-  // Update gauge fill
-  // Circle circumference = 2 * PI * r = 2 * 3.14159 * 54 = 339.292
-  const circumference = 339.292;
-  const offset = circumference - (rate / 100) * circumference;
-  elements.successGaugeFill.style.strokeDashoffset = offset;
-  
-  // Color based on rate
-  elements.successGaugeFill.classList.remove('warning', 'danger');
-  if (rate < 60) {
-    elements.successGaugeFill.classList.add('danger');
-  } else if (rate < 80) {
-    elements.successGaugeFill.classList.add('warning');
-  }
 }
 
 /**
@@ -656,12 +608,6 @@ function resetStats() {
       </div>
     `;
   }
-  
-  // Success Rate
-  if (elements.successRate) elements.successRate.textContent = '-';
-  if (elements.successMerged) elements.successMerged.textContent = '-';
-  if (elements.successClosed) elements.successClosed.textContent = '-';
-  if (elements.successGaugeFill) elements.successGaugeFill.style.strokeDashoffset = '339.292';
   
   // Reviews
   if (elements.totalReviews) elements.totalReviews.textContent = '-';
