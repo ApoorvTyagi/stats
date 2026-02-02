@@ -57,8 +57,10 @@ const JIRA_USERNAME = getJiraUsername();
 let allTickets = [];
 let filteredTickets = [];
 let currentTypeFilter = 'all';
+let currentStatusFilter = 'In Progress';
 let currentPage = 1;
 let typeCounts = {};
+let statusCounts = {};
 
 // DOM Elements
 const elements = {
@@ -83,7 +85,15 @@ const elements = {
   countTask: document.getElementById('countTask'),
   countStory: document.getElementById('countStory'),
   countEpic: document.getElementById('countEpic'),
-  countSubtask: document.getElementById('countSubtask')
+  countSubtask: document.getElementById('countSubtask'),
+  // Status filter elements
+  statusFilters: document.getElementById('statusFilters'),
+  countToDo: document.getElementById('countToDo'),
+  countInProgress: document.getElementById('countInProgress'),
+  countDevComplete: document.getElementById('countDevComplete'),
+  countQA: document.getElementById('countQA'),
+  countReview: document.getElementById('countReview'),
+  countDone: document.getElementById('countDone')
 };
 
 /**
@@ -96,7 +106,7 @@ async function init() {
     // Set user info
     const githubUsername = getGitHubUsername();
     elements.userAvatar.src = `https://github.com/${githubUsername}.png`;
-    elements.username.textContent = JIRA_USERNAME;
+    elements.username.textContent = githubUsername;
 
     // Update favicon
     const favicon = document.querySelector('link[rel="icon"]');
@@ -142,6 +152,11 @@ function setupEventListeners() {
   // Type filter buttons
   document.querySelectorAll('.type-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => filterByType(btn.dataset.type));
+  });
+
+  // Status filter buttons
+  document.querySelectorAll('.status-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => filterByStatus(btn.dataset.status));
   });
 
   // Sort select
@@ -190,14 +205,16 @@ async function loadAllTickets() {
       await fetchAllStatusGroups();
     }
 
-    // Calculate type counts
+    // Calculate type and status counts
     calculateTypeCounts();
+    calculateStatusCounts();
     
     // Update filter counts
     updateFilterCounts();
+    updateStatusFilterCounts();
 
     // Apply initial filter
-    filterByType('all');
+    applyFilters();
 
     // Render charts
     renderStatusPieChart();
@@ -278,6 +295,50 @@ function updateFilterCounts() {
 }
 
 /**
+ * Calculate status counts from all tickets
+ */
+function calculateStatusCounts() {
+  statusCounts = {
+    'To Do': 0,
+    'In Progress': 0,
+    'Dev Complete': 0,
+    'QA': 0,
+    'Review': 0,
+    'Done': 0
+  };
+
+  allTickets.forEach(ticket => {
+    const status = ticket.status || '';
+    // Map statuses to our filter categories
+    if (STATUS_GROUPS['Open'].includes(status)) {
+      statusCounts['To Do']++;
+    } else if (status === 'In Progress') {
+      statusCounts['In Progress']++;
+    } else if (status === 'Dev Complete' || status === 'Development Complete') {
+      statusCounts['Dev Complete']++;
+    } else if (status === 'QA' || status === 'QA Testing' || status === 'In QA') {
+      statusCounts['QA']++;
+    } else if (status === 'In Review' || status === 'Code Review' || status === 'Review') {
+      statusCounts['Review']++;
+    } else if (STATUS_GROUPS['Done'].includes(status)) {
+      statusCounts['Done']++;
+    }
+  });
+}
+
+/**
+ * Update status filter count badges
+ */
+function updateStatusFilterCounts() {
+  if (elements.countToDo) elements.countToDo.textContent = statusCounts['To Do'] || 0;
+  if (elements.countInProgress) elements.countInProgress.textContent = statusCounts['In Progress'] || 0;
+  if (elements.countDevComplete) elements.countDevComplete.textContent = statusCounts['Dev Complete'] || 0;
+  if (elements.countQA) elements.countQA.textContent = statusCounts['QA'] || 0;
+  if (elements.countReview) elements.countReview.textContent = statusCounts['Review'] || 0;
+  if (elements.countDone) elements.countDone.textContent = statusCounts['Done'] || 0;
+}
+
+/**
  * Filter tickets by type
  */
 function filterByType(type) {
@@ -289,12 +350,58 @@ function filterByType(type) {
     btn.classList.toggle('active', btn.dataset.type === type);
   });
 
-  // Filter tickets
-  if (type === 'all') {
-    filteredTickets = [...allTickets];
-  } else {
-    filteredTickets = allTickets.filter(ticket => ticket.type === type);
+  // Apply combined filters
+  applyFilters();
+}
+
+/**
+ * Filter tickets by status
+ */
+function filterByStatus(status) {
+  currentStatusFilter = status;
+  currentPage = 1;
+
+  // Update active button
+  document.querySelectorAll('.status-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.status === status);
+  });
+
+  // Apply combined filters
+  applyFilters();
+}
+
+/**
+ * Apply both type and status filters
+ */
+function applyFilters() {
+  // Start with all tickets
+  filteredTickets = [...allTickets];
+
+  // Apply type filter
+  if (currentTypeFilter !== 'all') {
+    filteredTickets = filteredTickets.filter(ticket => ticket.type === currentTypeFilter);
   }
+
+  // Apply status filter
+  filteredTickets = filteredTickets.filter(ticket => {
+    const status = ticket.status || '';
+    switch (currentStatusFilter) {
+      case 'To Do':
+        return STATUS_GROUPS['Open'].includes(status);
+      case 'In Progress':
+        return status === 'In Progress';
+      case 'Dev Complete':
+        return status === 'Dev Complete' || status === 'Development Complete';
+      case 'QA':
+        return status === 'QA' || status === 'QA Testing' || status === 'In QA';
+      case 'Review':
+        return status === 'In Review' || status === 'Code Review' || status === 'Review';
+      case 'Done':
+        return STATUS_GROUPS['Done'].includes(status);
+      default:
+        return true;
+    }
+  });
 
   // Update count display
   elements.ticketCount.textContent = filteredTickets.length;

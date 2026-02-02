@@ -324,6 +324,97 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Status Filters */
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.status-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.status-filter-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.status-filter-btn:hover {
+  background: var(--glass-bg);
+  border-color: var(--glass-border-hover, rgba(255, 255, 255, 0.15));
+  color: var(--text-primary);
+}
+
+.status-filter-btn.active {
+  background: linear-gradient(135deg, rgba(38, 132, 255, 0.2), rgba(0, 82, 204, 0.2));
+  border-color: rgba(38, 132, 255, 0.5);
+  color: #2684FF;
+}
+
+.status-filter-btn[data-status="To Do"].active {
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.1));
+  border-color: rgba(88, 166, 255, 0.5);
+  color: var(--accent-blue);
+}
+
+.status-filter-btn[data-status="To Do"] svg { color: var(--accent-blue); }
+
+.status-filter-btn[data-status="In Progress"].active {
+  background: linear-gradient(135deg, rgba(210, 153, 34, 0.2), rgba(210, 153, 34, 0.1));
+  border-color: rgba(210, 153, 34, 0.5);
+  color: var(--accent-orange);
+}
+
+.status-filter-btn[data-status="In Progress"] svg { color: var(--accent-orange); }
+
+.status-filter-btn[data-status="Dev Complete"].active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.1));
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38BDF8;
+}
+
+.status-filter-btn[data-status="Dev Complete"] svg { color: #38BDF8; }
+
+.status-filter-btn[data-status="QA"].active {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(251, 146, 60, 0.1));
+  border-color: rgba(251, 146, 60, 0.5);
+  color: #FB923C;
+}
+
+.status-filter-btn[data-status="QA"] svg { color: #FB923C; }
+
+.status-filter-btn[data-status="Review"].active {
+  background: linear-gradient(135deg, rgba(163, 113, 247, 0.2), rgba(163, 113, 247, 0.1));
+  border-color: rgba(163, 113, 247, 0.5);
+  color: var(--accent-purple);
+}
+
+.status-filter-btn[data-status="Review"] svg { color: var(--accent-purple); }
+
+.status-filter-btn[data-status="Done"].active {
+  background: linear-gradient(135deg, rgba(67, 233, 123, 0.2), rgba(67, 233, 123, 0.1));
+  border-color: rgba(67, 233, 123, 0.5);
+  color: var(--accent-green);
+}
+
+.status-filter-btn[data-status="Done"] svg { color: var(--accent-green); }
+
+.status-filter-btn.active .filter-count {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* ==========================================
    Tickets List Section
    ========================================== */
@@ -776,7 +867,8 @@
     grid-template-columns: 1fr;
   }
   
-  .type-filters {
+  .type-filters,
+  .status-filters {
     justify-content: center;
   }
   
@@ -815,11 +907,13 @@
 }
 
 @media (max-width: 480px) {
-  .type-filter-btn span:not(.filter-count) {
+  .type-filter-btn span:not(.filter-count),
+  .status-filter-btn span:not(.filter-count) {
     display: none;
   }
   
-  .type-filter-btn {
+  .type-filter-btn,
+  .status-filter-btn {
     padding: var(--spacing-sm);
   }
   
