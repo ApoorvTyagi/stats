@@ -82,8 +82,6 @@ const elements = {
   chart: document.getElementById('chart'),
   chartLegend: document.getElementById('chartLegend'),
   reposGrid: document.getElementById('reposGrid'),
-  reposBarChart: document.getElementById('reposBarChart'),
-  toggleRepoDetails: document.getElementById('toggleRepoDetails'),
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
@@ -119,9 +117,6 @@ async function init() {
 
     // Setup click handler for Open PRs card
     setupOpenPRsCardClick();
-    
-    // Setup toggle for repo details
-    setupRepoDetailsToggle();
 
     // Load aggregate stats
     await loadAggregateStats();
@@ -163,29 +158,6 @@ function setupOpenPRsCardClick() {
 }
 
 /**
- * Setup toggle for repository details view
- */
-function setupRepoDetailsToggle() {
-  if (elements.toggleRepoDetails && elements.reposGrid) {
-    elements.toggleRepoDetails.addEventListener('click', () => {
-      const isExpanded = elements.reposGrid.classList.contains('expanded');
-      
-      if (isExpanded) {
-        elements.reposGrid.classList.remove('expanded');
-        elements.reposGrid.classList.add('collapsed');
-        elements.toggleRepoDetails.classList.remove('expanded');
-        elements.toggleRepoDetails.querySelector('span').textContent = 'Show detailed view';
-      } else {
-        elements.reposGrid.classList.remove('collapsed');
-        elements.reposGrid.classList.add('expanded');
-        elements.toggleRepoDetails.classList.add('expanded');
-        elements.toggleRepoDetails.querySelector('span').textContent = 'Hide detailed view';
-      }
-    });
-  }
-}
-
-/**
  * Load aggregate stats across all repositories
  */
 async function loadAggregateStats() {
@@ -208,9 +180,8 @@ async function loadAggregateStats() {
     // Update chart
     updateChart(data.mergeMetrics);
 
-    // Update top repos (both bar chart and grid)
+    // Update top repos
     updateTopRepos(data.contributedRepos);
-    updateReposBarChart(data.contributedRepos);
     
     // Update day of week chart from aggregate data
     updateDayOfWeekChart(data.activityByDay);
@@ -360,7 +331,7 @@ function renderActivityChart(timeline) {
   
   elements.activityChart.innerHTML = `
     ${yAxisHtml}
-    <div class="activity-chart-inner" style="margin-left: 40px;">
+    <div class="activity-chart-inner">
       ${barsHtml}
     </div>
   `;
@@ -516,46 +487,6 @@ function updateTopRepos(repos) {
 }
 
 /**
- * Update horizontal bar chart for repositories
- */
-function updateReposBarChart(repos) {
-  if (!elements.reposBarChart) return;
-  
-  if (!repos || repos.length === 0) {
-    elements.reposBarChart.innerHTML = `
-      <div class="chart-placeholder">
-        <span>No contributed repositories found</span>
-      </div>
-    `;
-    return;
-  }
-  
-  // Sort by merged count (descending)
-  const sortedRepos = [...repos].sort((a, b) => b.mergedCount - a.mergedCount);
-  
-  // Take top 5
-  const topRepos = sortedRepos.slice(0, 5);
-  
-  // Find max for scaling
-  const maxMerged = Math.max(...topRepos.map(r => r.mergedCount));
-  
-  elements.reposBarChart.innerHTML = topRepos.map(repo => {
-    const percentage = maxMerged > 0 ? (repo.mergedCount / maxMerged) * 100 : 0;
-    const repoName = repo.fullName.split('/')[1] || repo.fullName;
-    
-    return `
-      <div class="repo-bar-item">
-        <span class="repo-bar-name" title="${repo.fullName}">${repoName}</span>
-        <div class="repo-bar-track">
-          <div class="repo-bar-fill" style="width: ${percentage}%"></div>
-        </div>
-        <span class="repo-bar-count">${repo.mergedCount}</span>
-      </div>
-    `;
-  }).join('');
-}
-
-/**
  * Update day of week activity chart
  */
 function updateDayOfWeekChart(activityData) {
@@ -670,13 +601,6 @@ function resetStats() {
   if (elements.reposGrid) {
     elements.reposGrid.innerHTML = `
       <div class="repo-placeholder">Unable to load repositories</div>
-    `;
-  }
-  if (elements.reposBarChart) {
-    elements.reposBarChart.innerHTML = `
-      <div class="chart-placeholder">
-        <span>Unable to load chart</span>
-      </div>
     `;
   }
   

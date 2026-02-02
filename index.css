@@ -978,14 +978,9 @@ body {
   transform: rotate(180deg);
 }
 
-/* Collapsible Repos Grid */
-.repos-grid.collapsed {
-  display: none;
-}
-
-.repos-grid.expanded {
+/* Repos Grid - always visible */
+.repos-grid {
   display: grid;
-  margin-top: var(--spacing-lg);
 }
 
 /* ==========================================
@@ -1104,23 +1099,26 @@ body {
   border-radius: var(--radius-md);
   position: relative;
   overflow: visible;
+  display: flex;
 }
 
 .activity-chart-inner {
   display: flex;
   align-items: flex-end;
-  justify-content: space-around;
-  height: calc(100% - 40px);
-  gap: var(--spacing-xl);
+  justify-content: center;
+  height: 100%;
+  gap: var(--spacing-2xl);
+  flex: 1;
+  padding-bottom: 30px;
 }
 
 .activity-bar-group {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
+  flex: 1;
   max-width: 140px;
+  height: 100%;
   position: relative;
 }
 
@@ -1130,15 +1128,14 @@ body {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  height: 100%;
+  flex: 1;
 }
 
 .activity-bar {
-  flex: 1;
-  max-width: 36px;
+  width: 36px;
   border-radius: 4px 4px 0 0;
   transition: all 0.3s ease;
-  min-height: 2px;
+  min-height: 4px;
 }
 
 .activity-bar.created {
@@ -1217,15 +1214,12 @@ body {
 
 /* Chart Y-axis */
 .activity-chart-yaxis {
-  position: absolute;
-  left: 0;
-  top: var(--spacing-lg);
-  bottom: calc(var(--spacing-lg) + 24px);
-  width: 30px;
+  width: 40px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  pointer-events: none;
+  padding-bottom: 30px;
+  flex-shrink: 0;
 }
 
 .yaxis-label {
