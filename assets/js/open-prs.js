@@ -17,7 +17,11 @@ function getUsernameFromURL() {
   // Fallback: try to extract from path (for direct access to /stats/username/open-prs.html)
   const pathname = window.location.pathname;
   const match = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
-  if (match && match[1]) {
+  
+  // Known reserved paths that are NOT usernames
+  const reservedPaths = ['pages', 'assets'];
+  
+  if (match && match[1] && !reservedPaths.includes(match[1].toLowerCase())) {
     return match[1];
   }
   
@@ -99,7 +103,17 @@ async function loadOpenPRs() {
     const response = await fetch(`${API_BASE_URL}/open-prs?username=${encodeURIComponent(GITHUB_USERNAME)}`);
 
     if (!response.ok) {
-      throw new Error('Failed to fetch open pull requests');
+      // Try to get error message from API response
+      let errorMessage = 'Failed to fetch open pull requests';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {
+        // If we can't parse the error response, use default message
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -112,13 +126,14 @@ async function loadOpenPRs() {
     filterAndRenderPRs();
 
   } catch (error) {
-    showError('Could not load open pull requests: ' + error.message);
+    const displayMessage = error.message || 'Unable to load pull requests';
+    showError(displayMessage);
     elements.prList.innerHTML = `
       <div class="pr-placeholder error">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
-        <span>Unable to load pull requests</span>
+        <span>${escapeHtml(displayMessage)}</span>
       </div>
     `;
   }

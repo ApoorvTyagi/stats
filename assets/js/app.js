@@ -43,8 +43,11 @@ function getUsernameFromPath() {
   // Remove any remaining trailing slashes
   path = path.replace(/\/+$/, '');
   
-  // If empty or is a known page name, return default
-  if (!path || ['index.html', 'open-prs.html', 'open-prs'].includes(path.toLowerCase())) {
+  // Known reserved paths that are NOT usernames
+  const reservedPaths = ['pages', 'assets', 'index.html', 'open-prs.html', 'open-prs', 'jira-tickets.html', 'jira-tickets'];
+  
+  // If empty or is a known reserved path, return default
+  if (!path || reservedPaths.includes(path.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
   
@@ -52,8 +55,8 @@ function getUsernameFromPath() {
   const segments = path.split('/');
   const username = segments[0];
   
-  // Final check - if it's a known page, return default
-  if (['index.html', 'open-prs.html', 'open-prs'].includes(username.toLowerCase())) {
+  // Final check - if it's a reserved path (not a username), return default
+  if (reservedPaths.includes(username.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
   
@@ -132,12 +135,15 @@ async function init() {
 }
 
 /**
- * Show JIRA link only for default user or tyagiapoorv
+ * Show JIRA link only for default user or tyagiapoorv, and update its href
  */
 function updateJiraLinkVisibility() {
   if (elements.jiraLink) {
     const showJira = GITHUB_USERNAME === DEFAULT_USERNAME || GITHUB_USERNAME.toLowerCase() === 'tyagiapoorv';
     elements.jiraLink.style.display = showJira ? '' : 'none';
+    
+    // Update JIRA link href to use absolute path
+    elements.jiraLink.href = '/stats/pages/jira-tickets.html';
   }
 }
 
@@ -180,7 +186,17 @@ async function loadAggregateStats() {
     const aggregateResponse = await fetch(`${API_BASE_URL}/aggregate?username=${encodeURIComponent(GITHUB_USERNAME)}`);
 
     if (!aggregateResponse.ok) {
-      throw new Error('Failed to fetch aggregate stats');
+      // Try to get error message from API response
+      let errorMessage = 'Failed to fetch aggregate stats';
+      try {
+        const errorData = await aggregateResponse.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {
+        // If we can't parse the error response, use default message
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await aggregateResponse.json();
@@ -204,7 +220,8 @@ async function loadAggregateStats() {
     loadActivityData();
 
   } catch (error) {
-    showError('Could not load stats: ' + error.message);
+    const displayMessage = error.message || 'Could not load stats';
+    showError(displayMessage);
     resetStats();
   }
 }

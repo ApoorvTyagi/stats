@@ -129,7 +129,15 @@ function getGitHubUsername() {
   // Try to extract from path or use default
   const pathname = window.location.pathname;
   const match = pathname.match(/\/stats\/([^\/]+)\//i);
-  return match ? match[1] : 'tyagiapoorv';
+  
+  // Known reserved paths that are NOT usernames
+  const reservedPaths = ['pages', 'assets'];
+  
+  if (match && match[1] && !reservedPaths.includes(match[1].toLowerCase())) {
+    return match[1];
+  }
+  
+  return 'tyagiapoorv';
 }
 
 /**
@@ -139,6 +147,7 @@ function updateBackLink() {
   const backLink = document.querySelector('.back-link');
   if (backLink) {
     const githubUsername = getGitHubUsername();
+    // Default username 'tyagiapoorv' should go to /stats/
     if (githubUsername !== 'tyagiapoorv') {
       backLink.href = `/stats/${githubUsername}/`;
     } else {
