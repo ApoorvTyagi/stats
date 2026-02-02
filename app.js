@@ -276,63 +276,45 @@ function updateTrendIndicator(element, trendValue) {
 }
 
 /**
- * Render activity timeline chart
+ * Render activity timeline chart - horizontal bar layout
  */
 function renderActivityChart(timeline) {
   if (!elements.activityChart || !timeline || timeline.length === 0) return;
   
   // Find max value for scaling
-  const maxValue = Math.max(
-    ...timeline.map(w => Math.max(w.created || 0, w.merged || 0)),
-    1
-  );
+  const maxCreated = Math.max(...timeline.map(w => w.created || 0), 1);
+  const maxMerged = Math.max(...timeline.map(w => w.merged || 0), 1);
+  const maxValue = Math.max(maxCreated, maxMerged);
   
-  const chartHeight = 150; // pixels for bar area
-  
-  // Generate bar groups
-  const barsHtml = timeline.map((week) => {
-    const createdHeight = ((week.created || 0) / maxValue) * chartHeight;
-    const mergedHeight = ((week.merged || 0) / maxValue) * chartHeight;
+  // Generate rows for each week
+  const rowsHtml = timeline.map((week) => {
+    const createdPercent = ((week.created || 0) / maxValue) * 100;
+    const mergedPercent = ((week.merged || 0) / maxValue) * 100;
     
     // Format date for label
     const date = new Date(week.date);
     const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     
     return `
-      <div class="activity-bar-group">
-        <div class="activity-bar-tooltip">
-          <div class="tooltip-date">Week of ${label}</div>
-          <div class="tooltip-row created">
-            <span>Created</span>
-            <span>${week.created || 0}</span>
+      <div class="activity-row">
+        <span class="activity-row-label">${label}</span>
+        <div class="activity-row-bars">
+          <div class="activity-row-bar-wrapper">
+            <div class="activity-row-bar created" style="width: ${Math.max(createdPercent, 2)}%"></div>
+            <span class="activity-row-value">${week.created || 0}</span>
           </div>
-          <div class="tooltip-row merged">
-            <span>Merged</span>
-            <span>${week.merged || 0}</span>
+          <div class="activity-row-bar-wrapper">
+            <div class="activity-row-bar merged" style="width: ${Math.max(mergedPercent, 2)}%"></div>
+            <span class="activity-row-value">${week.merged || 0}</span>
           </div>
         </div>
-        <div class="activity-bars">
-          <div class="activity-bar created" style="height: ${Math.max(createdHeight, 4)}px"></div>
-          <div class="activity-bar merged" style="height: ${Math.max(mergedHeight, 4)}px"></div>
-        </div>
-        <span class="activity-bar-label">${label}</span>
       </div>
     `;
   }).join('');
   
-  // Generate Y-axis labels
-  const yAxisHtml = `
-    <div class="activity-chart-yaxis">
-      <span class="yaxis-label">${maxValue}</span>
-      <span class="yaxis-label">${Math.round(maxValue / 2)}</span>
-      <span class="yaxis-label">0</span>
-    </div>
-  `;
-  
   elements.activityChart.innerHTML = `
-    ${yAxisHtml}
-    <div class="activity-chart-inner">
-      ${barsHtml}
+    <div class="activity-chart-horizontal">
+      ${rowsHtml}
     </div>
   `;
 }
