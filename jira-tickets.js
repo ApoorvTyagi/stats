@@ -4,8 +4,8 @@
  */
 
 // Configuration
-const API_BASE_URL = '/api/jira';
-const DEFAULT_JIRA_USERNAME = 'apoorv.tyagi';
+const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api/jira';
+const DEFAULT_JIRA_USERNAME = 'apoorv.tyagi@paypay-corp.co.jp';
 
 /**
  * Get JIRA username from URL or use default
