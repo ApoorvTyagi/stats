@@ -1,11 +1,22 @@
 /**
  * JIRA Tickets Dashboard - Frontend Application
  * View assigned, reported, and watched JIRA tickets
+ * Grouped by status with pagination
  */
 
 // Configuration
 const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api/jira';
 const DEFAULT_JIRA_USERNAME = 'apoorv.tyagi@paypay-corp.co.jp';
+const TICKETS_PER_PAGE = 10;
+
+// Status categories in display order
+const STATUS_CATEGORIES = ['Open', 'In Progress', 'Blocked', 'Done'];
+const STATUS_KEY_MAP = {
+  'Open': 'open',
+  'In Progress': 'inProgress',
+  'Blocked': 'blocked',
+  'Done': 'done'
+};
 
 /**
  * Get JIRA username from URL or use default
@@ -19,10 +30,40 @@ const JIRA_USERNAME = getJiraUsername();
 
 // State
 let currentTab = 'assigned';
+let expandedStatus = null; // Currently expanded status section
+
+// Data structure for grouped tickets
 let ticketsData = {
-  assigned: { tickets: [], stats: null, loaded: false },
-  reported: { tickets: [], stats: null, loaded: false },
-  watching: { tickets: [], stats: null, loaded: false }
+  assigned: { 
+    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
+    groups: {
+      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
+    },
+    summaryLoaded: false
+  },
+  reported: { 
+    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
+    groups: {
+      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
+    },
+    summaryLoaded: false
+  },
+  watching: { 
+    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
+    groups: {
+      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
+      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
+    },
+    summaryLoaded: false
+  }
 };
 
 // DOM Elements
@@ -30,19 +71,10 @@ const elements = {
   userAvatar: document.getElementById('userAvatar'),
   username: document.getElementById('username'),
   ticketCount: document.getElementById('ticketCount'),
-  ticketsList: document.getElementById('ticketsList'),
-  searchInput: document.getElementById('searchInput'),
-  priorityFilter: document.getElementById('priorityFilter'),
-  typeFilter: document.getElementById('typeFilter'),
-  sortSelect: document.getElementById('sortSelect'),
+  statusAccordion: document.getElementById('statusAccordion'),
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
-  // Stats
-  statOpen: document.getElementById('statOpen'),
-  statInProgress: document.getElementById('statInProgress'),
-  statBlocked: document.getElementById('statBlocked'),
-  statDone: document.getElementById('statDone'),
   // Tab counts
   assignedCount: document.getElementById('assignedCount'),
   reportedCount: document.getElementById('reportedCount'),
@@ -73,12 +105,15 @@ async function init() {
     // Setup event listeners
     setupEventListeners();
 
-    // Load initial tab data
-    await loadTickets('assigned');
+    // Load initial tab summary (counts only)
+    await loadSummary('assigned');
     
-    // Load other tabs in background
-    loadTickets('reported');
-    loadTickets('watching');
+    // Render the accordion with counts
+    renderStatusAccordion();
+    
+    // Load other tab summaries in background
+    loadSummary('reported');
+    loadSummary('watching');
 
   } catch (error) {
     showError('Failed to initialize: ' + error.message);
@@ -120,12 +155,6 @@ function setupEventListeners() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
-
-  // Search and filters
-  elements.searchInput.addEventListener('input', filterAndRenderTickets);
-  elements.priorityFilter.addEventListener('change', filterAndRenderTickets);
-  elements.typeFilter.addEventListener('change', filterAndRenderTickets);
-  elements.sortSelect.addEventListener('change', filterAndRenderTickets);
 }
 
 /**
@@ -135,35 +164,32 @@ async function switchTab(tab) {
   if (tab === currentTab) return;
 
   currentTab = tab;
+  expandedStatus = null; // Collapse any expanded section
 
   // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
 
-  // Load data if not already loaded
-  if (!ticketsData[tab].loaded) {
+  // Load summary if not already loaded
+  if (!ticketsData[tab].summaryLoaded) {
     showLoading(true);
-    await loadTickets(tab);
+    await loadSummary(tab);
     showLoading(false);
-  } else {
-    filterAndRenderTickets();
-    updateStats(ticketsData[tab].stats);
   }
+  
+  // Render accordion for the new tab
+  renderStatusAccordion();
 }
 
 /**
- * Load tickets from API
+ * Load summary (counts only) from API
  */
-async function loadTickets(tab) {
-  const endpoints = {
-    assigned: '/tickets/open',
-    reported: '/tickets/reported',
-    watching: '/tickets/watching'
-  };
-
+async function loadSummary(tab) {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoints[tab]}?username=${encodeURIComponent(JIRA_USERNAME)}`);
+    const response = await fetch(
+      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=${tab}`
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -172,34 +198,69 @@ async function loadTickets(tab) {
 
     const data = await response.json();
     
-    ticketsData[tab] = {
-      tickets: data.tickets || [],
-      stats: data.stats || null,
-      loaded: true
-    };
+    ticketsData[tab].summary = data.summary || { open: 0, inProgress: 0, blocked: 0, done: 0 };
+    ticketsData[tab].summaryLoaded = true;
 
-    // Update tab count
-    updateTabCount(tab, data.totalCount || 0);
+    // Update tab count (total of all statuses)
+    const total = Object.values(ticketsData[tab].summary).reduce((a, b) => a + b, 0);
+    updateTabCount(tab, total);
 
-    // If this is the current tab, render
+    // If this is the current tab, re-render accordion
     if (tab === currentTab) {
-      filterAndRenderTickets();
-      updateStats(data.stats);
+      renderStatusAccordion();
     }
 
   } catch (error) {
-    console.error(`Failed to load ${tab} tickets:`, error);
+    console.error(`Failed to load ${tab} summary:`, error);
+    ticketsData[tab].summaryLoaded = true;
+    ticketsData[tab].error = error.message;
     
-    ticketsData[tab] = {
-      tickets: [],
-      stats: null,
-      loaded: true,
-      error: error.message
-    };
-
     if (tab === currentTab) {
-      renderError(error.message);
+      showError('Failed to load ticket summary: ' + error.message);
     }
+  }
+}
+
+/**
+ * Load tickets for a specific status with pagination
+ */
+async function loadTicketsByStatus(status, page = 1, append = false) {
+  const group = ticketsData[currentTab].groups[status];
+  
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=${currentTab}&status=${encodeURIComponent(status)}&page=${page}&limit=${TICKETS_PER_PAGE}`
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const pagination = data.data?.pagination || {};
+    const tickets = data.data?.tickets || [];
+
+    if (append) {
+      group.tickets = [...group.tickets, ...tickets];
+    } else {
+      group.tickets = tickets;
+    }
+    
+    group.page = pagination.page || page;
+    group.totalItems = pagination.totalItems || 0;
+    group.totalPages = pagination.totalPages || 0;
+    group.hasMore = pagination.hasMore || false;
+    group.loaded = true;
+
+    // Re-render the expanded section
+    renderTicketsForStatus(status);
+
+  } catch (error) {
+    console.error(`Failed to load ${status} tickets:`, error);
+    group.loaded = true;
+    group.error = error.message;
+    renderTicketsForStatus(status);
   }
 }
 
@@ -219,125 +280,166 @@ function updateTabCount(tab, count) {
 }
 
 /**
- * Update stats display
+ * Render the status accordion
  */
-function updateStats(stats) {
-  if (!stats) {
-    elements.statOpen.textContent = '-';
-    elements.statInProgress.textContent = '-';
-    elements.statBlocked.textContent = '-';
-    elements.statDone.textContent = '-';
-    return;
-  }
-
-  animateValue(elements.statOpen, stats.open || 0);
-  animateValue(elements.statInProgress, stats.inProgress || 0);
-  animateValue(elements.statBlocked, stats.blocked || 0);
-  animateValue(elements.statDone, stats.done || 0);
-}
-
-/**
- * Filter and render tickets based on current filters
- */
-function filterAndRenderTickets() {
+function renderStatusAccordion() {
   const data = ticketsData[currentTab];
+  const summary = data.summary;
   
-  if (!data.loaded || data.error) {
-    if (data.error) {
-      renderError(data.error);
-    }
-    return;
-  }
+  // Calculate total count
+  const total = Object.values(summary).reduce((a, b) => a + b, 0);
+  elements.ticketCount.textContent = total;
 
-  let tickets = [...data.tickets];
+  let html = '';
+  
+  STATUS_CATEGORIES.forEach(status => {
+    const key = STATUS_KEY_MAP[status];
+    const count = summary[key] || 0;
+    const isExpanded = expandedStatus === status;
+    const group = data.groups[status];
+    
+    html += `
+      <div class="status-accordion-item" data-status="${escapeHtml(status)}">
+        <button class="status-accordion-header ${isExpanded ? 'expanded' : ''}" 
+                data-status="${escapeHtml(status)}"
+                onclick="toggleStatusSection('${escapeHtml(status)}')">
+          <div class="status-header-left">
+            <span class="status-expand-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </span>
+            <span class="status-badge" data-status="${escapeHtml(status)}">${escapeHtml(status)}</span>
+          </div>
+          <span class="status-count">${count}</span>
+        </button>
+        <div class="status-accordion-content ${isExpanded ? 'expanded' : ''}" id="content-${key}">
+          ${isExpanded ? renderStatusContent(status, group) : ''}
+        </div>
+      </div>
+    `;
+  });
 
-  // Apply search filter
-  const searchTerm = elements.searchInput.value.toLowerCase();
-  if (searchTerm) {
-    tickets = tickets.filter(ticket => {
-      const key = (ticket.key || '').toLowerCase();
-      const summary = (ticket.summary || '').toLowerCase();
-      const project = (ticket.project || '').toLowerCase();
-      const assignee = (ticket.assignee || '').toLowerCase();
-      return key.includes(searchTerm) || 
-             summary.includes(searchTerm) || 
-             project.includes(searchTerm) ||
-             assignee.includes(searchTerm);
-    });
-  }
-
-  // Apply priority filter
-  const priorityFilter = elements.priorityFilter.value;
-  if (priorityFilter) {
-    tickets = tickets.filter(ticket => ticket.priority === priorityFilter);
-  }
-
-  // Apply type filter
-  const typeFilter = elements.typeFilter.value;
-  if (typeFilter) {
-    tickets = tickets.filter(ticket => ticket.type === typeFilter);
-  }
-
-  // Apply sorting
-  tickets = sortTickets(tickets, elements.sortSelect.value);
-
-  // Update count
-  elements.ticketCount.textContent = tickets.length;
-
-  // Render
-  renderTicketsList(tickets);
+  elements.statusAccordion.innerHTML = html;
 }
 
 /**
- * Sort tickets based on selected option
+ * Render content for a specific status section
  */
-function sortTickets(tickets, sortBy) {
-  const sorted = [...tickets];
-  const priorityOrder = { 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3 };
-
-  switch (sortBy) {
-    case 'updated':
-      sorted.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      break;
-    case 'created':
-      sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      break;
-    case 'priority':
-      sorted.sort((a, b) => (priorityOrder[a.priority] || 99) - (priorityOrder[b.priority] || 99));
-      break;
-    case 'dueDate':
-      sorted.sort((a, b) => {
-        if (!a.dueDate && !b.dueDate) return 0;
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate) - new Date(b.dueDate);
-      });
-      break;
-    default:
-      break;
+function renderStatusContent(status, group) {
+  if (!group.loaded) {
+    return `
+      <div class="status-loading">
+        <div class="spinner"></div>
+        <span>Loading tickets...</span>
+      </div>
+    `;
   }
 
-  return sorted;
-}
+  if (group.error) {
+    return `
+      <div class="status-error">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <span>${escapeHtml(group.error)}</span>
+      </div>
+    `;
+  }
 
-/**
- * Render the tickets list
- */
-function renderTicketsList(tickets) {
-  if (!tickets || tickets.length === 0) {
-    elements.ticketsList.innerHTML = `
-      <div class="empty-state">
+  if (!group.tickets || group.tickets.length === 0) {
+    return `
+      <div class="status-empty">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84H11.53zM6.77 6.8a4.36 4.36 0 0 0 4.34 4.34h1.8v1.72a4.36 4.36 0 0 0 4.34 4.34V7.63a.84.84 0 0 0-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.34 4.35 4.35h1.78v1.7A4.36 4.36 0 0 0 12.47 22v-9.57a.84.84 0 0 0-.84-.84H2z"/>
         </svg>
-        <h3>No tickets found</h3>
-        <p>There are no tickets matching your current filters.</p>
+        <span>No ${status.toLowerCase()} tickets</span>
       </div>
     `;
-    return;
   }
 
-  elements.ticketsList.innerHTML = tickets.map(ticket => createTicketCard(ticket)).join('');
+  let html = `<div class="status-tickets-list">`;
+  html += group.tickets.map(ticket => createTicketCard(ticket)).join('');
+  html += `</div>`;
+
+  // Pagination info and Load More button
+  html += `
+    <div class="status-pagination">
+      <span class="pagination-info">
+        Showing ${group.tickets.length} of ${group.totalItems} tickets
+      </span>
+      ${group.hasMore ? `
+        <button class="load-more-btn" onclick="loadMoreTickets('${escapeHtml(status)}')">
+          Load More
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+          </svg>
+        </button>
+      ` : ''}
+    </div>
+  `;
+
+  return html;
+}
+
+/**
+ * Re-render tickets for a specific status
+ */
+function renderTicketsForStatus(status) {
+  const key = STATUS_KEY_MAP[status];
+  const contentEl = document.getElementById(`content-${key}`);
+  const group = ticketsData[currentTab].groups[status];
+  
+  if (contentEl) {
+    contentEl.innerHTML = renderStatusContent(status, group);
+  }
+}
+
+/**
+ * Toggle a status section expand/collapse
+ */
+async function toggleStatusSection(status) {
+  const wasExpanded = expandedStatus === status;
+  
+  // Collapse current section
+  if (wasExpanded) {
+    expandedStatus = null;
+    renderStatusAccordion();
+    return;
+  }
+  
+  // Expand new section
+  expandedStatus = status;
+  
+  const group = ticketsData[currentTab].groups[status];
+  
+  // If not loaded yet, load first page
+  if (!group.loaded) {
+    renderStatusAccordion(); // Show loading state
+    await loadTicketsByStatus(status, 1, false);
+  } else {
+    renderStatusAccordion();
+  }
+}
+
+/**
+ * Load more tickets for a status section
+ */
+async function loadMoreTickets(status) {
+  const group = ticketsData[currentTab].groups[status];
+  const nextPage = group.page + 1;
+  
+  // Show loading state on button
+  const btn = document.querySelector(`.status-accordion-item[data-status="${status}"] .load-more-btn`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <span class="spinner-small"></span>
+      Loading...
+    `;
+  }
+  
+  await loadTicketsByStatus(status, nextPage, true);
 }
 
 /**
@@ -507,11 +609,11 @@ function escapeHtml(text) {
 }
 
 /**
- * Render error state
+ * Render error state in accordion
  */
 function renderError(message) {
-  elements.ticketsList.innerHTML = `
-    <div class="ticket-placeholder error">
+  elements.statusAccordion.innerHTML = `
+    <div class="status-error">
       <svg viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
       </svg>

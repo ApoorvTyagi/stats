@@ -22,9 +22,9 @@ function checkAndRedirectOpenPRsRoute() {
     
     // Redirect to the proper open-prs page with query parameter
     if (username && username !== DEFAULT_USERNAME) {
-      window.location.replace(`/stats/open-prs.html?user=${encodeURIComponent(username)}`);
+      window.location.replace(`/stats/pages/open-prs.html?user=${encodeURIComponent(username)}`);
     } else {
-      window.location.replace('/stats/open-prs.html');
+      window.location.replace('/stats/pages/open-prs.html');
     }
     return true; // Indicate we're redirecting
   }
@@ -69,6 +69,7 @@ const GITHUB_USERNAME = getUsernameFromPath();
 const elements = {
   userAvatar: document.getElementById('userAvatar'),
   username: document.getElementById('username'),
+  jiraLink: document.getElementById('jiraLink'),
 
   totalPRs: document.getElementById('totalPRs'),
   openPRs: document.getElementById('openPRs'),
@@ -115,6 +116,9 @@ async function init() {
       favicon.href = `https://github.com/${GITHUB_USERNAME}.png`;
     }
 
+    // Show JIRA link only for default user or tyagiapoorv
+    updateJiraLinkVisibility();
+
     // Setup click handler for Open PRs card
     setupOpenPRsCardClick();
 
@@ -128,6 +132,16 @@ async function init() {
 }
 
 /**
+ * Show JIRA link only for default user or tyagiapoorv
+ */
+function updateJiraLinkVisibility() {
+  if (elements.jiraLink) {
+    const showJira = GITHUB_USERNAME === DEFAULT_USERNAME || GITHUB_USERNAME.toLowerCase() === 'tyagiapoorv';
+    elements.jiraLink.style.display = showJira ? '' : 'none';
+  }
+}
+
+/**
  * Setup click handler for Open PRs card to navigate to open PRs page
  */
 function setupOpenPRsCardClick() {
@@ -135,9 +149,9 @@ function setupOpenPRsCardClick() {
     elements.openPRsCard.addEventListener('click', () => {
       // Navigate to open PRs page with username as query parameter
       if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
-        window.location.href = `/stats/open-prs.html?user=${encodeURIComponent(GITHUB_USERNAME)}`;
+        window.location.href = `/stats/pages/open-prs.html?user=${encodeURIComponent(GITHUB_USERNAME)}`;
       } else {
-        window.location.href = '/stats/open-prs.html';
+        window.location.href = '/stats/pages/open-prs.html';
       }
     });
 
@@ -148,9 +162,9 @@ function setupOpenPRsCardClick() {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
-          window.location.href = `/stats/open-prs.html?user=${encodeURIComponent(GITHUB_USERNAME)}`;
+          window.location.href = `/stats/pages/open-prs.html?user=${encodeURIComponent(GITHUB_USERNAME)}`;
         } else {
-          window.location.href = '/stats/open-prs.html';
+          window.location.href = '/stats/pages/open-prs.html';
         }
       }
     });

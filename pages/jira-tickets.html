@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="https://github.com/tyagiapoorv.png">
-  <link rel="stylesheet" href="index.css">
-  <link rel="stylesheet" href="jira-tickets.css">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/jira-tickets.css">
 </head>
 
 <body>
@@ -24,7 +24,7 @@
     <header class="header">
       <div class="header-content">
         <div class="logo">
-          <a href="index.html" class="back-link">
+          <a href="../index.html" class="back-link">
             <svg class="back-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
             </svg>
@@ -50,26 +50,6 @@
             <h2>JIRA Tickets</h2>
             <p>Showing <span id="ticketCount">0</span> tickets</p>
           </div>
-        </div>
-      </section>
-
-      <!-- Stats Overview Cards -->
-      <section class="stats-overview">
-        <div class="stat-mini-card" data-type="open">
-          <span class="stat-mini-value" id="statOpen">-</span>
-          <span class="stat-mini-label">Open</span>
-        </div>
-        <div class="stat-mini-card" data-type="inProgress">
-          <span class="stat-mini-value" id="statInProgress">-</span>
-          <span class="stat-mini-label">In Progress</span>
-        </div>
-        <div class="stat-mini-card" data-type="blocked">
-          <span class="stat-mini-value" id="statBlocked">-</span>
-          <span class="stat-mini-label">Blocked</span>
-        </div>
-        <div class="stat-mini-card" data-type="done">
-          <span class="stat-mini-value" id="statDone">-</span>
-          <span class="stat-mini-label">Done</span>
         </div>
       </section>
 
@@ -100,56 +80,17 @@
         </div>
       </section>
 
-      <!-- Filter/Sort Controls -->
-      <section class="controls-section">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-          </svg>
-          <input type="text" id="searchInput" placeholder="Search tickets...">
-        </div>
-        <div class="filter-controls">
-          <div class="filter-group">
-            <label for="priorityFilter">Priority:</label>
-            <select id="priorityFilter">
-              <option value="">All</option>
-              <option value="Critical">Critical</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label for="typeFilter">Type:</label>
-            <select id="typeFilter">
-              <option value="">All</option>
-              <option value="Bug">Bug</option>
-              <option value="Story">Story</option>
-              <option value="Task">Task</option>
-              <option value="Epic">Epic</option>
-            </select>
-          </div>
-          <div class="sort-controls">
-            <label for="sortSelect">Sort:</label>
-            <select id="sortSelect">
-              <option value="updated">Recently Updated</option>
-              <option value="created">Newest First</option>
-              <option value="priority">Priority</option>
-              <option value="dueDate">Due Date</option>
-            </select>
+      <!-- Status Accordion Section -->
+      <section class="status-accordion-section">
+        <div class="status-accordion" id="statusAccordion">
+          <!-- Accordion items will be rendered by JavaScript -->
+          <div class="status-loading">
+            <div class="spinner"></div>
+            <span>Loading ticket summary...</span>
           </div>
         </div>
       </section>
 
-      <!-- Tickets List -->
-      <section class="tickets-list-section">
-        <div class="tickets-list" id="ticketsList">
-          <div class="ticket-placeholder">
-            <div class="spinner"></div>
-            <span>Loading tickets...</span>
-          </div>
-        </div>
-      </section>
     </main>
 
     <!-- Footer -->
@@ -184,8 +125,8 @@
     </div>
   </div>
 
-  <script src="loading-screen.js"></script>
-  <script src="jira-tickets.js"></script>
+  <script src="../assets/js/loading-screen.js"></script>
+  <script src="../assets/js/jira-tickets.js"></script>
 </body>
 
 </html>
