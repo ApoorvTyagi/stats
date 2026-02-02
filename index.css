@@ -1185,84 +1185,69 @@ body {
 }
 
 /* ==========================================
-   Day of Week Activity Chart
+   Day of Week Activity Chart - Horizontal Layout
    ========================================== */
 .day-of-week-chart {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  height: 200px;
+  flex-direction: column;
+  gap: var(--spacing-md);
   padding: var(--spacing-lg);
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--radius-md);
-  gap: var(--spacing-sm);
 }
 
-.day-bar {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.day-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 50px;
+  gap: var(--spacing-md);
   align-items: center;
+}
+
+.day-row-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.day-row.weekend .day-row-label {
+  color: var(--text-secondary);
+}
+
+.day-row-track {
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.day-row-fill {
   height: 100%;
-  position: relative;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+  transition: width 0.6s ease-out, filter 0.2s ease;
+  width: 0%;
 }
 
-.day-bar-fill {
-  width: 100%;
-  max-width: 50px;
-  background: linear-gradient(180deg, var(--accent-purple), var(--accent-blue));
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  transition: height 0.6s ease-out;
-  height: var(--fill-height, 0%);
-  margin-top: auto;
-}
-
-.day-bar[data-day="Sat"] .day-bar-fill,
-.day-bar[data-day="Sun"] .day-bar-fill {
-  background: linear-gradient(180deg, var(--accent-pink), var(--accent-purple));
+.day-row.weekend .day-row-fill {
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple));
   opacity: 0.7;
 }
 
-.day-label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-  margin-top: var(--spacing-sm);
-}
-
-.day-value {
-  position: absolute;
-  top: -30px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  transition: all var(--transition-base);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.day-value.zero {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: transparent;
-}
-
-.day-bar:hover .day-value {
-  opacity: 1;
-  background: linear-gradient(135deg, #667eea, #a78bfa);
-  transform: scale(1.15);
-  border-color: transparent;
-}
-
-.day-bar:hover .day-value.zero {
-  opacity: 0.6;
-}
-
-.day-bar:hover .day-bar-fill {
+.day-row:hover .day-row-fill {
   filter: brightness(1.2);
+}
+
+.day-row-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: color var(--transition-base);
+}
+
+.day-row:hover .day-row-value {
+  color: var(--accent-green);
 }
 
 .day-of-week-placeholder {
@@ -1352,16 +1337,20 @@ body {
   }
   
   .day-of-week-chart {
-    height: 150px;
     padding: var(--spacing-md);
   }
   
-  .day-bar-fill {
-    max-width: 30px;
+  .day-row {
+    grid-template-columns: 40px 1fr 40px;
   }
   
-  .day-label {
-    font-size: 0.65rem;
+  .day-row-label,
+  .day-row-value {
+    font-size: 0.75rem;
+  }
+  
+  .day-row-track {
+    height: 20px;
   }
   
   .activity-summary {

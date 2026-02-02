@@ -469,7 +469,7 @@ function updateTopRepos(repos) {
 }
 
 /**
- * Update day of week activity chart
+ * Update day of week activity chart - horizontal bars
  */
 function updateDayOfWeekChart(activityData) {
   if (!elements.dayOfWeekChart) return;
@@ -488,32 +488,25 @@ function updateDayOfWeekChart(activityData) {
     elements.dayOfWeekPlaceholder.style.display = 'none';
   }
   
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   
   const values = dayKeys.map(key => activityData[key] || 0);
   const maxValue = Math.max(...values, 1);
   
-  const dayBars = elements.dayOfWeekChart.querySelectorAll('.day-bar');
+  const dayRows = elements.dayOfWeekChart.querySelectorAll('.day-row');
   
-  dayBars.forEach((bar, index) => {
+  dayRows.forEach((row, index) => {
     const value = values[index];
-    const percentage = (value / maxValue) * 80; // Max 80% height
+    const percentage = (value / maxValue) * 100;
     
-    const fill = bar.querySelector('.day-bar-fill');
-    const valueEl = bar.querySelector('.day-value');
+    const fill = row.querySelector('.day-row-fill');
+    const valueEl = row.querySelector('.day-row-value');
     
     if (fill) {
-      fill.style.setProperty('--fill-height', `${percentage}%`);
+      fill.style.width = `${percentage}%`;
     }
     if (valueEl) {
       valueEl.textContent = value;
-      // Add zero class for styling
-      if (value === 0) {
-        valueEl.classList.add('zero');
-      } else {
-        valueEl.classList.remove('zero');
-      }
     }
   });
 }
