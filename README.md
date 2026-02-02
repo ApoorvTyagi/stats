@@ -1,6 +1,6 @@
 # GitHub Stats Dashboard
 
-A beautiful, modern dashboard to view your GitHub PR statistics and merge time metrics across all contributed repositories.
+A beautiful, modern dashboard to view your GitHub PR statistics, merge time metrics, and JIRA tickets across all contributed repositories.
 
 🔗 **Live**: [tyagiapoorv.github.io/stats](https://tyagiapoorv.github.io/stats/)
 
@@ -29,6 +29,18 @@ A beautiful, modern dashboard to view your GitHub PR statistics and merge time m
 - 🔗 **Quick Links** - Click any PR to open it directly on GitHub
 - ✨ **Clickable Open Card** - Click the "Open" stat card on the dashboard to navigate directly
 
+### JIRA Tickets Page
+- 🎫 **Ticket Views** - Three tabs to view tickets:
+  - **Assigned to Me** - Tickets assigned to you
+  - **Reported by Me** - Tickets you created
+  - **Watching** - Tickets you're watching
+- 📊 **Stats Overview** - Quick view of Open, In Progress, Blocked, and Done counts
+- 🔍 **Search & Filter** - Search tickets and filter by priority or type
+- 🔄 **Sorting** - Sort by updated date, created date, priority, or due date
+- 🎨 **Visual Indicators** - Color-coded priority levels and status badges
+- ⏰ **Due Date Alerts** - Overdue and upcoming due dates highlighted
+- 🔗 **Quick Links** - Click any ticket to open it directly in JIRA
+
 
 ## Usage
 
@@ -48,6 +60,12 @@ Click on the "Open" PR card in the dashboard to view all open pull requests, or 
 https://tyagiapoorv.github.io/stats/open-prs.html?user=<username>
 ```
 
+### Navigating to JIRA Tickets
+Click on the "JIRA" link in the header navigation, or navigate directly:
+```
+https://tyagiapoorv.github.io/stats/jira-tickets.html?username=<jira-username>
+```
+
 ## Project Structure
 
 ```
@@ -58,6 +76,9 @@ stats/
 ├── open-prs.html         # Open pull requests page
 ├── open-prs.css          # Open PRs page styles
 ├── open-prs.js           # Open PRs page logic
+├── jira-tickets.html     # JIRA tickets page
+├── jira-tickets.css      # JIRA tickets page styles
+├── jira-tickets.js       # JIRA tickets page logic
 ├── loading-screen.js     # Modular loading screen module
 ├── 404.html              # SPA routing for GitHub Pages
 ├── CONTRIBUTING.md       # Contribution guidelines
