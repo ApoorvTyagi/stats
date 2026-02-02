@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="JIRA Tickets Dashboard - View your assigned, reported, and watched tickets">
+  <meta name="description" content="JIRA Tickets Dashboard - View your assigned tickets with analytics">
   <title>JIRA Tickets - Stats Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,46 +48,127 @@
         <div class="page-header-content">
           <div class="page-header-text">
             <h2>JIRA Tickets</h2>
-            <p>Showing <span id="ticketCount">0</span> tickets</p>
+            <p>Showing <span id="ticketCount">0</span> tickets assigned to you</p>
           </div>
         </div>
       </section>
 
-      <!-- Tabs Navigation -->
-      <section class="tabs-section">
-        <div class="tabs-nav">
-          <button class="tab-btn active" data-tab="assigned">
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <div class="charts-grid">
+          <!-- Status Distribution Pie Chart -->
+          <div class="chart-card">
+            <h3 class="chart-title">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/>
+              </svg>
+              Status Distribution
+            </h3>
+            <div class="pie-chart-container" id="statusPieChart">
+              <div class="chart-placeholder">
+                <div class="spinner"></div>
+                <span>Loading chart...</span>
+              </div>
+            </div>
+            <div class="pie-chart-legend" id="statusLegend"></div>
+          </div>
+
+          <!-- Monthly Distribution Bar Chart -->
+          <div class="chart-card">
+            <h3 class="chart-title">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+              </svg>
+              Monthly Distribution
+            </h3>
+            <div class="bar-chart-container" id="monthlyChart">
+              <div class="chart-placeholder">
+                <div class="spinner"></div>
+                <span>Loading chart...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Type Filters Section -->
+      <section class="filters-section">
+        <h3 class="filters-title">Filter by Type</h3>
+        <div class="type-filters" id="typeFilters">
+          <button class="type-filter-btn active" data-type="all">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
             </svg>
-            <span>Assigned to Me</span>
-            <span class="tab-count" id="assignedCount">0</span>
+            <span>All</span>
+            <span class="filter-count" id="countAll">0</span>
           </button>
-          <button class="tab-btn" data-tab="reported">
+          <button class="type-filter-btn" data-type="Bug">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              <path d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/>
             </svg>
-            <span>Reported by Me</span>
-            <span class="tab-count" id="reportedCount">0</span>
+            <span>Bug</span>
+            <span class="filter-count" id="countBug">0</span>
           </button>
-          <button class="tab-btn" data-tab="watching">
+          <button class="type-filter-btn" data-type="Task">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              <path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
-            <span>Watching</span>
-            <span class="tab-count" id="watchingCount">0</span>
+            <span>Task</span>
+            <span class="filter-count" id="countTask">0</span>
+          </button>
+          <button class="type-filter-btn" data-type="Story">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+            </svg>
+            <span>Story</span>
+            <span class="filter-count" id="countStory">0</span>
+          </button>
+          <button class="type-filter-btn" data-type="Epic">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 14l5-5 5 5z"/>
+            </svg>
+            <span>Epic</span>
+            <span class="filter-count" id="countEpic">0</span>
+          </button>
+          <button class="type-filter-btn" data-type="Sub-task">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm3-4H7v-2h8v2zm0-4H7V7h8v2z"/>
+            </svg>
+            <span>Sub-task</span>
+            <span class="filter-count" id="countSubtask">0</span>
           </button>
         </div>
       </section>
 
-      <!-- Status Accordion Section -->
-      <section class="status-accordion-section">
-        <div class="status-accordion" id="statusAccordion">
-          <!-- Accordion items will be rendered by JavaScript -->
-          <div class="status-loading">
+      <!-- Tickets List Section -->
+      <section class="tickets-list-section">
+        <div class="tickets-list-header">
+          <h3 class="section-title">Tickets</h3>
+          <div class="sort-controls">
+            <label for="sortSelect">Sort by:</label>
+            <select id="sortSelect">
+              <option value="updated">Recently Updated</option>
+              <option value="created">Recently Created</option>
+              <option value="priority">Priority</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+        </div>
+        <div class="tickets-list" id="ticketsList">
+          <div class="tickets-loading">
             <div class="spinner"></div>
-            <span>Loading ticket summary...</span>
+            <span>Loading tickets...</span>
           </div>
+        </div>
+        <!-- Pagination -->
+        <div class="pagination-controls" id="paginationControls" style="display: none;">
+          <span class="pagination-info" id="paginationInfo">Showing 0 of 0</span>
+          <button class="load-more-btn" id="loadMoreBtn">
+            Load More
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+            </svg>
+          </button>
         </div>
       </section>
 

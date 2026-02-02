@@ -1,7 +1,6 @@
 /**
  * JIRA Tickets Dashboard - Frontend Application
- * View assigned, reported, and watched JIRA tickets
- * Grouped by status with pagination
+ * View assigned JIRA tickets with analytics charts
  */
 
 // Configuration
@@ -9,13 +8,25 @@ const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api/jira';
 const DEFAULT_JIRA_USERNAME = 'apoorv.tyagi@paypay-corp.co.jp';
 const TICKETS_PER_PAGE = 10;
 
-// Status categories in display order
-const STATUS_CATEGORIES = ['Open', 'In Progress', 'Blocked', 'Done'];
-const STATUS_KEY_MAP = {
-  'Open': 'open',
-  'In Progress': 'inProgress',
-  'Blocked': 'blocked',
-  'Done': 'done'
+// Status colors for charts
+const STATUS_COLORS = {
+  'Open': '#58A6FF',
+  'To Do': '#58A6FF',
+  'In Progress': '#D29922',
+  'In Review': '#A371F7',
+  'Code Review': '#A371F7',
+  'Blocked': '#F85149',
+  'Done': '#43E97B',
+  'Resolved': '#43E97B',
+  'Closed': '#43E97B'
+};
+
+// Status categories for grouping
+const STATUS_GROUPS = {
+  'Open': ['Open', 'To Do'],
+  'In Progress': ['In Progress', 'In Review', 'Code Review'],
+  'Blocked': ['Blocked'],
+  'Done': ['Done', 'Resolved', 'Closed']
 };
 
 /**
@@ -26,59 +37,53 @@ function getJiraUsername() {
   return urlParams.get('username') || DEFAULT_JIRA_USERNAME;
 }
 
+/**
+ * Get GitHub username for avatar
+ */
+function getGitHubUsername() {
+  const pathname = window.location.pathname;
+  const match = pathname.match(/\/stats\/([^\/]+)\//i);
+  const reservedPaths = ['pages', 'assets'];
+  
+  if (match && match[1] && !reservedPaths.includes(match[1].toLowerCase())) {
+    return match[1];
+  }
+  return 'tyagiapoorv';
+}
+
 const JIRA_USERNAME = getJiraUsername();
 
 // State
-let currentTab = 'assigned';
-let expandedStatus = null; // Currently expanded status section
-
-// Data structure for grouped tickets
-let ticketsData = {
-  assigned: { 
-    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
-    groups: {
-      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
-    },
-    summaryLoaded: false
-  },
-  reported: { 
-    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
-    groups: {
-      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
-    },
-    summaryLoaded: false
-  },
-  watching: { 
-    summary: { open: 0, inProgress: 0, blocked: 0, done: 0 },
-    groups: {
-      Open: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      'In Progress': { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Blocked: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false },
-      Done: { tickets: [], page: 1, totalItems: 0, totalPages: 0, hasMore: false, loaded: false }
-    },
-    summaryLoaded: false
-  }
-};
+let allTickets = [];
+let filteredTickets = [];
+let currentTypeFilter = 'all';
+let currentPage = 1;
+let typeCounts = {};
 
 // DOM Elements
 const elements = {
   userAvatar: document.getElementById('userAvatar'),
   username: document.getElementById('username'),
   ticketCount: document.getElementById('ticketCount'),
-  statusAccordion: document.getElementById('statusAccordion'),
+  ticketsList: document.getElementById('ticketsList'),
+  sortSelect: document.getElementById('sortSelect'),
+  typeFilters: document.getElementById('typeFilters'),
+  statusPieChart: document.getElementById('statusPieChart'),
+  statusLegend: document.getElementById('statusLegend'),
+  monthlyChart: document.getElementById('monthlyChart'),
+  paginationControls: document.getElementById('paginationControls'),
+  paginationInfo: document.getElementById('paginationInfo'),
+  loadMoreBtn: document.getElementById('loadMoreBtn'),
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
-  // Tab counts
-  assignedCount: document.getElementById('assignedCount'),
-  reportedCount: document.getElementById('reportedCount'),
-  watchingCount: document.getElementById('watchingCount')
+  // Filter count elements
+  countAll: document.getElementById('countAll'),
+  countBug: document.getElementById('countBug'),
+  countTask: document.getElementById('countTask'),
+  countStory: document.getElementById('countStory'),
+  countEpic: document.getElementById('countEpic'),
+  countSubtask: document.getElementById('countSubtask')
 };
 
 /**
@@ -88,7 +93,7 @@ async function init() {
   showLoading(true);
 
   try {
-    // Set user info (using GitHub avatar as fallback)
+    // Set user info
     const githubUsername = getGitHubUsername();
     elements.userAvatar.src = `https://github.com/${githubUsername}.png`;
     elements.username.textContent = JIRA_USERNAME;
@@ -105,15 +110,8 @@ async function init() {
     // Setup event listeners
     setupEventListeners();
 
-    // Load initial tab summary (counts only)
-    await loadSummary('assigned');
-    
-    // Render the accordion with counts
-    renderStatusAccordion();
-    
-    // Load other tab summaries in background
-    loadSummary('reported');
-    loadSummary('watching');
+    // Load all tickets
+    await loadAllTickets();
 
   } catch (error) {
     showError('Failed to initialize: ' + error.message);
@@ -123,31 +121,12 @@ async function init() {
 }
 
 /**
- * Get GitHub username for avatar
- */
-function getGitHubUsername() {
-  // Try to extract from path or use default
-  const pathname = window.location.pathname;
-  const match = pathname.match(/\/stats\/([^\/]+)\//i);
-  
-  // Known reserved paths that are NOT usernames
-  const reservedPaths = ['pages', 'assets'];
-  
-  if (match && match[1] && !reservedPaths.includes(match[1].toLowerCase())) {
-    return match[1];
-  }
-  
-  return 'tyagiapoorv';
-}
-
-/**
  * Update back link to go to main dashboard
  */
 function updateBackLink() {
   const backLink = document.querySelector('.back-link');
   if (backLink) {
     const githubUsername = getGitHubUsername();
-    // Default username 'tyagiapoorv' should go to /stats/
     if (githubUsername !== 'tyagiapoorv') {
       backLink.href = `/stats/${githubUsername}/`;
     } else {
@@ -160,295 +139,268 @@ function updateBackLink() {
  * Setup event listeners
  */
 function setupEventListeners() {
-  // Tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  // Type filter buttons
+  document.querySelectorAll('.type-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => filterByType(btn.dataset.type));
   });
+
+  // Sort select
+  elements.sortSelect.addEventListener('change', () => {
+    currentPage = 1;
+    sortAndRenderTickets();
+  });
+
+  // Load more button
+  elements.loadMoreBtn.addEventListener('click', loadMoreTickets);
 }
 
 /**
- * Switch between tabs
+ * Load all tickets from API
  */
-async function switchTab(tab) {
-  if (tab === currentTab) return;
-
-  currentTab = tab;
-  expandedStatus = null; // Collapse any expanded section
-
-  // Update tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
-  });
-
-  // Load summary if not already loaded
-  if (!ticketsData[tab].summaryLoaded) {
-    showLoading(true);
-    await loadSummary(tab);
-    showLoading(false);
-  }
-  
-  // Render accordion for the new tab
-  renderStatusAccordion();
-}
-
-/**
- * Load summary (counts only) from API
- */
-async function loadSummary(tab) {
+async function loadAllTickets() {
   try {
+    // Fetch all assigned tickets (we'll get all pages)
     const response = await fetch(
-      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=${tab}`
+      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=assigned`
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
+      let errorMessage = 'Failed to fetch tickets';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {}
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
     
-    ticketsData[tab].summary = data.summary || { open: 0, inProgress: 0, blocked: 0, done: 0 };
-    ticketsData[tab].summaryLoaded = true;
-
-    // Update tab count (total of all statuses)
-    const total = Object.values(ticketsData[tab].summary).reduce((a, b) => a + b, 0);
-    updateTabCount(tab, total);
-
-    // If this is the current tab, re-render accordion
-    if (tab === currentTab) {
-      renderStatusAccordion();
-    }
-
-  } catch (error) {
-    console.error(`Failed to load ${tab} summary:`, error);
-    ticketsData[tab].summaryLoaded = true;
-    ticketsData[tab].error = error.message;
+    // Collect all tickets from all status groups
+    allTickets = [];
     
-    if (tab === currentTab) {
-      showError('Failed to load ticket summary: ' + error.message);
-    }
-  }
-}
-
-/**
- * Load tickets for a specific status with pagination
- */
-async function loadTicketsByStatus(status, page = 1, append = false) {
-  const group = ticketsData[currentTab].groups[status];
-  
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=${currentTab}&status=${encodeURIComponent(status)}&page=${page}&limit=${TICKETS_PER_PAGE}`
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const pagination = data.data?.pagination || {};
-    const tickets = data.data?.tickets || [];
-
-    if (append) {
-      group.tickets = [...group.tickets, ...tickets];
+    // If the API returns grouped data, flatten it
+    if (data.data && data.data.tickets) {
+      allTickets = data.data.tickets;
+    } else if (data.tickets) {
+      allTickets = data.tickets;
     } else {
-      group.tickets = tickets;
+      // Try to fetch from each status group
+      await fetchAllStatusGroups();
     }
-    
-    group.page = pagination.page || page;
-    group.totalItems = pagination.totalItems || 0;
-    group.totalPages = pagination.totalPages || 0;
-    group.hasMore = pagination.hasMore || false;
-    group.loaded = true;
 
-    // Re-render the expanded section
-    renderTicketsForStatus(status);
+    // Calculate type counts
+    calculateTypeCounts();
+    
+    // Update filter counts
+    updateFilterCounts();
+
+    // Apply initial filter
+    filterByType('all');
+
+    // Render charts
+    renderStatusPieChart();
+    renderMonthlyChart();
 
   } catch (error) {
-    console.error(`Failed to load ${status} tickets:`, error);
-    group.loaded = true;
-    group.error = error.message;
-    renderTicketsForStatus(status);
-  }
-}
-
-/**
- * Update tab count badge
- */
-function updateTabCount(tab, count) {
-  const countElements = {
-    assigned: elements.assignedCount,
-    reported: elements.reportedCount,
-    watching: elements.watchingCount
-  };
-
-  if (countElements[tab]) {
-    countElements[tab].textContent = count;
-  }
-}
-
-/**
- * Render the status accordion
- */
-function renderStatusAccordion() {
-  const data = ticketsData[currentTab];
-  const summary = data.summary;
-  
-  // Calculate total count
-  const total = Object.values(summary).reduce((a, b) => a + b, 0);
-  elements.ticketCount.textContent = total;
-
-  let html = '';
-  
-  STATUS_CATEGORIES.forEach(status => {
-    const key = STATUS_KEY_MAP[status];
-    const count = summary[key] || 0;
-    const isExpanded = expandedStatus === status;
-    const group = data.groups[status];
-    
-    html += `
-      <div class="status-accordion-item" data-status="${escapeHtml(status)}">
-        <button class="status-accordion-header ${isExpanded ? 'expanded' : ''}" 
-                data-status="${escapeHtml(status)}"
-                onclick="toggleStatusSection('${escapeHtml(status)}')">
-          <div class="status-header-left">
-            <span class="status-expand-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-              </svg>
-            </span>
-            <span class="status-badge" data-status="${escapeHtml(status)}">${escapeHtml(status)}</span>
-          </div>
-          <span class="status-count">${count}</span>
-        </button>
-        <div class="status-accordion-content ${isExpanded ? 'expanded' : ''}" id="content-${key}">
-          ${isExpanded ? renderStatusContent(status, group) : ''}
-        </div>
-      </div>
-    `;
-  });
-
-  elements.statusAccordion.innerHTML = html;
-}
-
-/**
- * Render content for a specific status section
- */
-function renderStatusContent(status, group) {
-  if (!group.loaded) {
-    return `
-      <div class="status-loading">
-        <div class="spinner"></div>
-        <span>Loading tickets...</span>
-      </div>
-    `;
-  }
-
-  if (group.error) {
-    return `
-      <div class="status-error">
+    const displayMessage = error.message || 'Failed to load tickets';
+    showError(displayMessage);
+    elements.ticketsList.innerHTML = `
+      <div class="tickets-error">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
         </svg>
-        <span>${escapeHtml(group.error)}</span>
+        <span>${escapeHtml(displayMessage)}</span>
       </div>
     `;
+    renderEmptyCharts();
+  }
+}
+
+/**
+ * Fetch tickets from all status groups
+ */
+async function fetchAllStatusGroups() {
+  const statuses = ['Open', 'In Progress', 'Blocked', 'Done'];
+  
+  for (const status of statuses) {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=assigned&status=${encodeURIComponent(status)}&limit=100`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tickets = data.data?.tickets || [];
+        allTickets = [...allTickets, ...tickets];
+      }
+    } catch (e) {
+      console.warn(`Failed to fetch ${status} tickets:`, e);
+    }
+  }
+}
+
+/**
+ * Calculate type counts from all tickets
+ */
+function calculateTypeCounts() {
+  typeCounts = {
+    all: allTickets.length,
+    Bug: 0,
+    Task: 0,
+    Story: 0,
+    Epic: 0,
+    'Sub-task': 0
+  };
+
+  allTickets.forEach(ticket => {
+    const type = ticket.type || 'Task';
+    if (typeCounts.hasOwnProperty(type)) {
+      typeCounts[type]++;
+    } else {
+      // Handle other types
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    }
+  });
+}
+
+/**
+ * Update filter count badges
+ */
+function updateFilterCounts() {
+  if (elements.countAll) elements.countAll.textContent = typeCounts.all || 0;
+  if (elements.countBug) elements.countBug.textContent = typeCounts.Bug || 0;
+  if (elements.countTask) elements.countTask.textContent = typeCounts.Task || 0;
+  if (elements.countStory) elements.countStory.textContent = typeCounts.Story || 0;
+  if (elements.countEpic) elements.countEpic.textContent = typeCounts.Epic || 0;
+  if (elements.countSubtask) elements.countSubtask.textContent = typeCounts['Sub-task'] || 0;
+}
+
+/**
+ * Filter tickets by type
+ */
+function filterByType(type) {
+  currentTypeFilter = type;
+  currentPage = 1;
+
+  // Update active button
+  document.querySelectorAll('.type-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+
+  // Filter tickets
+  if (type === 'all') {
+    filteredTickets = [...allTickets];
+  } else {
+    filteredTickets = allTickets.filter(ticket => ticket.type === type);
   }
 
-  if (!group.tickets || group.tickets.length === 0) {
-    return `
-      <div class="status-empty">
+  // Update count display
+  elements.ticketCount.textContent = filteredTickets.length;
+
+  // Sort and render
+  sortAndRenderTickets();
+}
+
+/**
+ * Sort and render tickets
+ */
+function sortAndRenderTickets() {
+  const sortBy = elements.sortSelect.value;
+  
+  // Sort tickets
+  const sorted = [...filteredTickets].sort((a, b) => {
+    switch (sortBy) {
+      case 'updated':
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      case 'created':
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      case 'priority':
+        return getPriorityWeight(a.priority) - getPriorityWeight(b.priority);
+      case 'status':
+        return getStatusWeight(a.status) - getStatusWeight(b.status);
+      default:
+        return 0;
+    }
+  });
+
+  // Paginate
+  const displayedTickets = sorted.slice(0, currentPage * TICKETS_PER_PAGE);
+  const hasMore = displayedTickets.length < sorted.length;
+
+  // Render
+  renderTicketsList(displayedTickets);
+  updatePagination(displayedTickets.length, sorted.length, hasMore);
+}
+
+/**
+ * Get priority weight for sorting
+ */
+function getPriorityWeight(priority) {
+  const weights = {
+    'Critical': 1,
+    'Highest': 1,
+    'High': 2,
+    'Medium': 3,
+    'Low': 4,
+    'Lowest': 5
+  };
+  return weights[priority] || 3;
+}
+
+/**
+ * Get status weight for sorting
+ */
+function getStatusWeight(status) {
+  const weights = {
+    'Blocked': 1,
+    'In Progress': 2,
+    'In Review': 3,
+    'Code Review': 3,
+    'Open': 4,
+    'To Do': 4,
+    'Done': 5,
+    'Resolved': 5,
+    'Closed': 6
+  };
+  return weights[status] || 4;
+}
+
+/**
+ * Load more tickets
+ */
+function loadMoreTickets() {
+  currentPage++;
+  sortAndRenderTickets();
+}
+
+/**
+ * Update pagination controls
+ */
+function updatePagination(displayed, total, hasMore) {
+  elements.paginationControls.style.display = total > 0 ? 'flex' : 'none';
+  elements.paginationInfo.textContent = `Showing ${displayed} of ${total}`;
+  elements.loadMoreBtn.style.display = hasMore ? 'inline-flex' : 'none';
+}
+
+/**
+ * Render tickets list
+ */
+function renderTicketsList(tickets) {
+  if (!tickets || tickets.length === 0) {
+    elements.ticketsList.innerHTML = `
+      <div class="tickets-empty">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84H11.53zM6.77 6.8a4.36 4.36 0 0 0 4.34 4.34h1.8v1.72a4.36 4.36 0 0 0 4.34 4.34V7.63a.84.84 0 0 0-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.34 4.35 4.35h1.78v1.7A4.36 4.36 0 0 0 12.47 22v-9.57a.84.84 0 0 0-.84-.84H2z"/>
         </svg>
-        <span>No ${status.toLowerCase()} tickets</span>
+        <span>No ${currentTypeFilter === 'all' ? '' : currentTypeFilter + ' '}tickets found</span>
       </div>
     `;
-  }
-
-  let html = `<div class="status-tickets-list">`;
-  html += group.tickets.map(ticket => createTicketCard(ticket)).join('');
-  html += `</div>`;
-
-  // Pagination info and Load More button
-  html += `
-    <div class="status-pagination">
-      <span class="pagination-info">
-        Showing ${group.tickets.length} of ${group.totalItems} tickets
-      </span>
-      ${group.hasMore ? `
-        <button class="load-more-btn" onclick="loadMoreTickets('${escapeHtml(status)}')">
-          Load More
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
-          </svg>
-        </button>
-      ` : ''}
-    </div>
-  `;
-
-  return html;
-}
-
-/**
- * Re-render tickets for a specific status
- */
-function renderTicketsForStatus(status) {
-  const key = STATUS_KEY_MAP[status];
-  const contentEl = document.getElementById(`content-${key}`);
-  const group = ticketsData[currentTab].groups[status];
-  
-  if (contentEl) {
-    contentEl.innerHTML = renderStatusContent(status, group);
-  }
-}
-
-/**
- * Toggle a status section expand/collapse
- */
-async function toggleStatusSection(status) {
-  const wasExpanded = expandedStatus === status;
-  
-  // Collapse current section
-  if (wasExpanded) {
-    expandedStatus = null;
-    renderStatusAccordion();
     return;
   }
-  
-  // Expand new section
-  expandedStatus = status;
-  
-  const group = ticketsData[currentTab].groups[status];
-  
-  // If not loaded yet, load first page
-  if (!group.loaded) {
-    renderStatusAccordion(); // Show loading state
-    await loadTicketsByStatus(status, 1, false);
-  } else {
-    renderStatusAccordion();
-  }
-}
 
-/**
- * Load more tickets for a status section
- */
-async function loadMoreTickets(status) {
-  const group = ticketsData[currentTab].groups[status];
-  const nextPage = group.page + 1;
-  
-  // Show loading state on button
-  const btn = document.querySelector(`.status-accordion-item[data-status="${status}"] .load-more-btn`);
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `
-      <span class="spinner-small"></span>
-      Loading...
-    `;
-  }
-  
-  await loadTicketsByStatus(status, nextPage, true);
+  elements.ticketsList.innerHTML = tickets.map(ticket => createTicketCard(ticket)).join('');
 }
 
 /**
@@ -526,6 +478,188 @@ function createTicketCard(ticket) {
 }
 
 /**
+ * Render status pie chart
+ */
+function renderStatusPieChart() {
+  const statusCounts = {};
+  
+  // Count by status group
+  allTickets.forEach(ticket => {
+    let group = 'Open';
+    for (const [groupName, statuses] of Object.entries(STATUS_GROUPS)) {
+      if (statuses.includes(ticket.status)) {
+        group = groupName;
+        break;
+      }
+    }
+    statusCounts[group] = (statusCounts[group] || 0) + 1;
+  });
+
+  const total = allTickets.length;
+  
+  if (total === 0) {
+    renderEmptyPieChart();
+    return;
+  }
+
+  // Calculate percentages and angles
+  const data = Object.entries(statusCounts).map(([status, count]) => ({
+    status,
+    count,
+    percentage: (count / total) * 100,
+    color: STATUS_COLORS[status] || '#666'
+  }));
+
+  // Create SVG pie chart
+  let currentAngle = 0;
+  const paths = data.map(item => {
+    const angle = (item.percentage / 100) * 360;
+    const path = createPieSlice(currentAngle, angle, item.color);
+    currentAngle += angle;
+    return path;
+  }).join('');
+
+  elements.statusPieChart.innerHTML = `
+    <div class="pie-chart-wrapper">
+      <svg class="pie-chart-svg" viewBox="0 0 100 100">
+        ${paths}
+      </svg>
+      <div class="pie-chart-center">
+        <div class="pie-chart-total">${total}</div>
+        <div class="pie-chart-label">Total</div>
+      </div>
+    </div>
+  `;
+
+  // Render legend
+  elements.statusLegend.innerHTML = data.map(item => `
+    <div class="legend-item">
+      <span class="legend-color" style="background: ${item.color};"></span>
+      <span>${item.status}: ${item.count}</span>
+    </div>
+  `).join('');
+}
+
+/**
+ * Create a pie slice path
+ */
+function createPieSlice(startAngle, angle, color) {
+  const cx = 50;
+  const cy = 50;
+  const r = 40;
+  const innerR = 25; // Donut hole
+
+  const startRad = (startAngle * Math.PI) / 180;
+  const endRad = ((startAngle + angle) * Math.PI) / 180;
+
+  const x1 = cx + r * Math.cos(startRad);
+  const y1 = cy + r * Math.sin(startRad);
+  const x2 = cx + r * Math.cos(endRad);
+  const y2 = cy + r * Math.sin(endRad);
+
+  const x3 = cx + innerR * Math.cos(endRad);
+  const y3 = cy + innerR * Math.sin(endRad);
+  const x4 = cx + innerR * Math.cos(startRad);
+  const y4 = cy + innerR * Math.sin(startRad);
+
+  const largeArc = angle > 180 ? 1 : 0;
+
+  return `
+    <path d="M ${x1} ${y1}
+             A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}
+             L ${x3} ${y3}
+             A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4}
+             Z"
+          fill="${color}"
+          stroke="var(--bg-primary)"
+          stroke-width="1"/>
+  `;
+}
+
+/**
+ * Render monthly distribution bar chart
+ */
+function renderMonthlyChart() {
+  const monthCounts = {};
+  const now = new Date();
+  
+  // Initialize last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    monthCounts[key] = 0;
+  }
+
+  // Count tickets by creation month
+  allTickets.forEach(ticket => {
+    if (ticket.createdAt) {
+      const date = new Date(ticket.createdAt);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (monthCounts.hasOwnProperty(key)) {
+        monthCounts[key]++;
+      }
+    }
+  });
+
+  const entries = Object.entries(monthCounts);
+  const maxCount = Math.max(...Object.values(monthCounts), 1);
+
+  if (entries.length === 0) {
+    renderEmptyBarChart();
+    return;
+  }
+
+  const rows = entries.map(([month, count]) => {
+    const percentage = (count / maxCount) * 100;
+    const [year, monthNum] = month.split('-');
+    const monthName = new Date(year, parseInt(monthNum) - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+    
+    return `
+      <div class="bar-chart-row">
+        <span class="bar-chart-label">${monthName}</span>
+        <div class="bar-chart-track">
+          <div class="bar-chart-fill" style="width: ${Math.max(percentage, 2)}%"></div>
+          <span class="bar-chart-value">${count}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  elements.monthlyChart.innerHTML = `<div class="bar-chart">${rows}</div>`;
+}
+
+/**
+ * Render empty charts
+ */
+function renderEmptyCharts() {
+  renderEmptyPieChart();
+  renderEmptyBarChart();
+}
+
+function renderEmptyPieChart() {
+  elements.statusPieChart.innerHTML = `
+    <div class="chart-placeholder">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/>
+      </svg>
+      <span>No data available</span>
+    </div>
+  `;
+  elements.statusLegend.innerHTML = '';
+}
+
+function renderEmptyBarChart() {
+  elements.monthlyChart.innerHTML = `
+    <div class="chart-placeholder">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+      </svg>
+      <span>No data available</span>
+    </div>
+  `;
+}
+
+/**
  * Get type icon SVG
  */
 function getTypeIcon(type) {
@@ -533,7 +667,8 @@ function getTypeIcon(type) {
     Bug: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-2.81c-.45-.78-1.07-1.45-1.82-1.96L17 4.41 15.59 3l-2.17 2.17C12.96 5.06 12.49 5 12 5c-.49 0-.96.06-1.41.17L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg>',
     Story: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>',
     Task: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>',
-    Epic: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>'
+    Epic: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>',
+    'Sub-task': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm3-4H7v-2h8v2zm0-4H7V7h8v2z"/></svg>'
   };
   return icons[type] || icons.Task;
 }
@@ -544,9 +679,11 @@ function getTypeIcon(type) {
 function getPriorityIcon(priority) {
   const icons = {
     Critical: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>',
+    Highest: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>',
     High: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>',
     Medium: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 12h8v2H8z"/></svg>',
-    Low: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>'
+    Low: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>',
+    Lowest: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>'
   };
   return icons[priority] || icons.Medium;
 }
@@ -615,45 +752,6 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
-}
-
-/**
- * Render error state in accordion
- */
-function renderError(message) {
-  elements.statusAccordion.innerHTML = `
-    <div class="status-error">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-      </svg>
-      <span>${escapeHtml(message)}</span>
-    </div>
-  `;
-}
-
-/**
- * Animate a numeric value change
- */
-function animateValue(element, newValue) {
-  if (!element) return;
-
-  const currentValue = parseInt(element.textContent) || 0;
-  const duration = 400;
-  const steps = 15;
-  const increment = (newValue - currentValue) / steps;
-  let current = currentValue;
-  let step = 0;
-
-  const timer = setInterval(() => {
-    step++;
-    current += increment;
-    element.textContent = Math.round(current);
-
-    if (step >= steps) {
-      element.textContent = newValue;
-      clearInterval(timer);
-    }
-  }, duration / steps);
 }
 
 /**
