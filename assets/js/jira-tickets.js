@@ -56,10 +56,8 @@ const JIRA_USERNAME = getJiraUsername();
 // State
 let allTickets = [];
 let filteredTickets = [];
-let currentTypeFilter = 'all';
 let currentStatusFilter = 'In Progress';
 let currentPage = 1;
-let typeCounts = {};
 let statusCounts = {};
 
 // DOM Elements
@@ -69,7 +67,6 @@ const elements = {
   ticketCount: document.getElementById('ticketCount'),
   ticketsList: document.getElementById('ticketsList'),
   sortSelect: document.getElementById('sortSelect'),
-  typeFilters: document.getElementById('typeFilters'),
   statusPieChart: document.getElementById('statusPieChart'),
   statusLegend: document.getElementById('statusLegend'),
   monthlyChart: document.getElementById('monthlyChart'),
@@ -79,13 +76,6 @@ const elements = {
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
-  // Filter count elements
-  countAll: document.getElementById('countAll'),
-  countBug: document.getElementById('countBug'),
-  countTask: document.getElementById('countTask'),
-  countStory: document.getElementById('countStory'),
-  countEpic: document.getElementById('countEpic'),
-  countSubtask: document.getElementById('countSubtask'),
   // Status filter elements
   statusFilters: document.getElementById('statusFilters'),
   countToDo: document.getElementById('countToDo'),
@@ -149,11 +139,6 @@ function updateBackLink() {
  * Setup event listeners
  */
 function setupEventListeners() {
-  // Type filter buttons
-  document.querySelectorAll('.type-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => filterByType(btn.dataset.type));
-  });
-
   // Status filter buttons
   document.querySelectorAll('.status-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => filterByStatus(btn.dataset.status));
@@ -205,12 +190,10 @@ async function loadAllTickets() {
       await fetchAllStatusGroups();
     }
 
-    // Calculate type and status counts
-    calculateTypeCounts();
+    // Calculate status counts
     calculateStatusCounts();
     
     // Update filter counts
-    updateFilterCounts();
     updateStatusFilterCounts();
 
     // Apply initial filter
@@ -259,42 +242,6 @@ async function fetchAllStatusGroups() {
 }
 
 /**
- * Calculate type counts from all tickets
- */
-function calculateTypeCounts() {
-  typeCounts = {
-    all: allTickets.length,
-    Bug: 0,
-    Task: 0,
-    Story: 0,
-    Epic: 0,
-    'Sub-task': 0
-  };
-
-  allTickets.forEach(ticket => {
-    const type = ticket.type || 'Task';
-    if (typeCounts.hasOwnProperty(type)) {
-      typeCounts[type]++;
-    } else {
-      // Handle other types
-      typeCounts[type] = (typeCounts[type] || 0) + 1;
-    }
-  });
-}
-
-/**
- * Update filter count badges
- */
-function updateFilterCounts() {
-  if (elements.countAll) elements.countAll.textContent = typeCounts.all || 0;
-  if (elements.countBug) elements.countBug.textContent = typeCounts.Bug || 0;
-  if (elements.countTask) elements.countTask.textContent = typeCounts.Task || 0;
-  if (elements.countStory) elements.countStory.textContent = typeCounts.Story || 0;
-  if (elements.countEpic) elements.countEpic.textContent = typeCounts.Epic || 0;
-  if (elements.countSubtask) elements.countSubtask.textContent = typeCounts['Sub-task'] || 0;
-}
-
-/**
  * Calculate status counts from all tickets
  */
 function calculateStatusCounts() {
@@ -339,22 +286,6 @@ function updateStatusFilterCounts() {
 }
 
 /**
- * Filter tickets by type
- */
-function filterByType(type) {
-  currentTypeFilter = type;
-  currentPage = 1;
-
-  // Update active button
-  document.querySelectorAll('.type-filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.type === type);
-  });
-
-  // Apply combined filters
-  applyFilters();
-}
-
-/**
  * Filter tickets by status
  */
 function filterByStatus(status) {
@@ -371,19 +302,11 @@ function filterByStatus(status) {
 }
 
 /**
- * Apply both type and status filters
+ * Apply status filter
  */
 function applyFilters() {
-  // Start with all tickets
-  filteredTickets = [...allTickets];
-
-  // Apply type filter
-  if (currentTypeFilter !== 'all') {
-    filteredTickets = filteredTickets.filter(ticket => ticket.type === currentTypeFilter);
-  }
-
-  // Apply status filter
-  filteredTickets = filteredTickets.filter(ticket => {
+  // Start with all tickets and apply status filter
+  filteredTickets = allTickets.filter(ticket => {
     const status = ticket.status || '';
     switch (currentStatusFilter) {
       case 'To Do':
