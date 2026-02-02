@@ -371,6 +371,22 @@
 
 .status-filter-btn[data-status="To Do"] svg { color: var(--accent-blue); }
 
+.status-filter-btn[data-status="Not Needed"].active {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.2), rgba(107, 114, 128, 0.1));
+  border-color: rgba(107, 114, 128, 0.5);
+  color: #6B7280;
+}
+
+.status-filter-btn[data-status="Not Needed"] svg { color: #6B7280; }
+
+.status-filter-btn[data-status="Reviewing"].active {
+  background: linear-gradient(135deg, rgba(163, 113, 247, 0.2), rgba(163, 113, 247, 0.1));
+  border-color: rgba(163, 113, 247, 0.5);
+  color: var(--accent-purple);
+}
+
+.status-filter-btn[data-status="Reviewing"] svg { color: var(--accent-purple); }
+
 .status-filter-btn[data-status="In Progress"].active {
   background: linear-gradient(135deg, rgba(210, 153, 34, 0.2), rgba(210, 153, 34, 0.1));
   border-color: rgba(210, 153, 34, 0.5);
@@ -379,30 +395,6 @@
 
 .status-filter-btn[data-status="In Progress"] svg { color: var(--accent-orange); }
 
-.status-filter-btn[data-status="Dev Complete"].active {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.1));
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #38BDF8;
-}
-
-.status-filter-btn[data-status="Dev Complete"] svg { color: #38BDF8; }
-
-.status-filter-btn[data-status="QA"].active {
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(251, 146, 60, 0.1));
-  border-color: rgba(251, 146, 60, 0.5);
-  color: #FB923C;
-}
-
-.status-filter-btn[data-status="QA"] svg { color: #FB923C; }
-
-.status-filter-btn[data-status="Review"].active {
-  background: linear-gradient(135deg, rgba(163, 113, 247, 0.2), rgba(163, 113, 247, 0.1));
-  border-color: rgba(163, 113, 247, 0.5);
-  color: var(--accent-purple);
-}
-
-.status-filter-btn[data-status="Review"] svg { color: var(--accent-purple); }
-
 .status-filter-btn[data-status="Done"].active {
   background: linear-gradient(135deg, rgba(67, 233, 123, 0.2), rgba(67, 233, 123, 0.1));
   border-color: rgba(67, 233, 123, 0.5);
@@ -410,6 +402,14 @@
 }
 
 .status-filter-btn[data-status="Done"] svg { color: var(--accent-green); }
+
+.status-filter-btn[data-status="Others"].active {
+  background: linear-gradient(135deg, rgba(248, 81, 73, 0.2), rgba(248, 81, 73, 0.1));
+  border-color: rgba(248, 81, 73, 0.5);
+  color: var(--accent-red);
+}
+
+.status-filter-btn[data-status="Others"] svg { color: var(--accent-red); }
 
 .status-filter-btn.active .filter-count {
   background: rgba(255, 255, 255, 0.15);
@@ -680,6 +680,16 @@
 .ticket-status[data-status="To Do"] {
   background: rgba(88, 166, 255, 0.2);
   color: var(--accent-blue);
+}
+
+.ticket-status[data-status="Not Needed"] {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6B7280;
+}
+
+.ticket-status[data-status="Reviewing"] {
+  background: rgba(163, 113, 247, 0.2);
+  color: var(--accent-purple);
 }
 
 .ticket-status[data-status="In Progress"] {

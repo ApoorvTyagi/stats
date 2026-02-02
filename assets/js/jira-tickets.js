@@ -8,26 +8,18 @@ const API_BASE_URL = 'https://stg.paypay-corp.co.jp/stats1/api/jira';
 const DEFAULT_JIRA_USERNAME = 'apoorv.tyagi@paypay-corp.co.jp';
 const TICKETS_PER_PAGE = 10;
 
-// Status colors for charts
+// Status colors for charts (matching filter categories)
 const STATUS_COLORS = {
-  'Open': '#58A6FF',
   'To Do': '#58A6FF',
+  'Not Needed': '#6B7280',
+  'Reviewing': '#A371F7',
   'In Progress': '#D29922',
-  'In Review': '#A371F7',
-  'Code Review': '#A371F7',
-  'Blocked': '#F85149',
   'Done': '#43E97B',
-  'Resolved': '#43E97B',
-  'Closed': '#43E97B'
+  'Others': '#F85149'
 };
 
-// Status categories for grouping
-const STATUS_GROUPS = {
-  'Open': ['Open', 'To Do'],
-  'In Progress': ['In Progress', 'In Review', 'Code Review'],
-  'Blocked': ['Blocked'],
-  'Done': ['Done', 'Resolved', 'Closed']
-};
+// Known statuses from BE for each filter category
+const KNOWN_STATUSES = ['To Do', 'Not Needed', 'Reviewing', 'In Progress', 'Done'];
 
 /**
  * Get JIRA username from URL or use default
@@ -79,11 +71,11 @@ const elements = {
   // Status filter elements
   statusFilters: document.getElementById('statusFilters'),
   countToDo: document.getElementById('countToDo'),
+  countNotNeeded: document.getElementById('countNotNeeded'),
+  countReviewing: document.getElementById('countReviewing'),
   countInProgress: document.getElementById('countInProgress'),
-  countDevComplete: document.getElementById('countDevComplete'),
-  countQA: document.getElementById('countQA'),
-  countReview: document.getElementById('countReview'),
-  countDone: document.getElementById('countDone')
+  countDone: document.getElementById('countDone'),
+  countOthers: document.getElementById('countOthers')
 };
 
 /**
@@ -247,28 +239,29 @@ async function fetchAllStatusGroups() {
 function calculateStatusCounts() {
   statusCounts = {
     'To Do': 0,
+    'Not Needed': 0,
+    'Reviewing': 0,
     'In Progress': 0,
-    'Dev Complete': 0,
-    'QA': 0,
-    'Review': 0,
-    'Done': 0
+    'Done': 0,
+    'Others': 0
   };
 
   allTickets.forEach(ticket => {
     const status = ticket.status || '';
-    // Map statuses to our filter categories
-    if (STATUS_GROUPS['Open'].includes(status)) {
+    // Map statuses to our filter categories based on BE statuses
+    if (status === 'To Do') {
       statusCounts['To Do']++;
+    } else if (status === 'Not Needed') {
+      statusCounts['Not Needed']++;
+    } else if (status === 'Reviewing') {
+      statusCounts['Reviewing']++;
     } else if (status === 'In Progress') {
       statusCounts['In Progress']++;
-    } else if (status === 'Dev Complete' || status === 'Development Complete') {
-      statusCounts['Dev Complete']++;
-    } else if (status === 'QA' || status === 'QA Testing' || status === 'In QA') {
-      statusCounts['QA']++;
-    } else if (status === 'In Review' || status === 'Code Review' || status === 'Review') {
-      statusCounts['Review']++;
-    } else if (STATUS_GROUPS['Done'].includes(status)) {
+    } else if (status === 'Done') {
       statusCounts['Done']++;
+    } else {
+      // Any status that doesn't match goes to Others
+      statusCounts['Others']++;
     }
   });
 }
@@ -278,11 +271,11 @@ function calculateStatusCounts() {
  */
 function updateStatusFilterCounts() {
   if (elements.countToDo) elements.countToDo.textContent = statusCounts['To Do'] || 0;
+  if (elements.countNotNeeded) elements.countNotNeeded.textContent = statusCounts['Not Needed'] || 0;
+  if (elements.countReviewing) elements.countReviewing.textContent = statusCounts['Reviewing'] || 0;
   if (elements.countInProgress) elements.countInProgress.textContent = statusCounts['In Progress'] || 0;
-  if (elements.countDevComplete) elements.countDevComplete.textContent = statusCounts['Dev Complete'] || 0;
-  if (elements.countQA) elements.countQA.textContent = statusCounts['QA'] || 0;
-  if (elements.countReview) elements.countReview.textContent = statusCounts['Review'] || 0;
   if (elements.countDone) elements.countDone.textContent = statusCounts['Done'] || 0;
+  if (elements.countOthers) elements.countOthers.textContent = statusCounts['Others'] || 0;
 }
 
 /**
@@ -310,17 +303,18 @@ function applyFilters() {
     const status = ticket.status || '';
     switch (currentStatusFilter) {
       case 'To Do':
-        return STATUS_GROUPS['Open'].includes(status);
+        return status === 'To Do';
+      case 'Not Needed':
+        return status === 'Not Needed';
+      case 'Reviewing':
+        return status === 'Reviewing';
       case 'In Progress':
         return status === 'In Progress';
-      case 'Dev Complete':
-        return status === 'Dev Complete' || status === 'Development Complete';
-      case 'QA':
-        return status === 'QA' || status === 'QA Testing' || status === 'In QA';
-      case 'Review':
-        return status === 'In Review' || status === 'Code Review' || status === 'Review';
       case 'Done':
-        return STATUS_GROUPS['Done'].includes(status);
+        return status === 'Done';
+      case 'Others':
+        // Any status that doesn't match known statuses
+        return !KNOWN_STATUSES.includes(status);
       default:
         return true;
     }
@@ -384,13 +378,16 @@ function getPriorityWeight(priority) {
  */
 function getStatusWeight(status) {
   const weights = {
-    'Blocked': 1,
-    'In Progress': 2,
-    'In Review': 3,
-    'Code Review': 3,
-    'Open': 4,
-    'To Do': 4,
+    'In Progress': 1,
+    'Reviewing': 2,
+    'To Do': 3,
+    'Not Needed': 4,
     'Done': 5,
+    // Legacy statuses for backward compatibility
+    'Blocked': 1,
+    'In Review': 2,
+    'Code Review': 2,
+    'Open': 3,
     'Resolved': 5,
     'Closed': 6
   };
@@ -511,18 +508,31 @@ function createTicketCard(ticket) {
  * Render status pie chart
  */
 function renderStatusPieChart() {
-  const statusCounts = {};
+  const pieStatusCounts = {
+    'To Do': 0,
+    'Not Needed': 0,
+    'Reviewing': 0,
+    'In Progress': 0,
+    'Done': 0,
+    'Others': 0
+  };
   
-  // Count by status group
+  // Count by the new status categories
   allTickets.forEach(ticket => {
-    let group = 'Open';
-    for (const [groupName, statuses] of Object.entries(STATUS_GROUPS)) {
-      if (statuses.includes(ticket.status)) {
-        group = groupName;
-        break;
-      }
+    const status = ticket.status || '';
+    if (status === 'To Do') {
+      pieStatusCounts['To Do']++;
+    } else if (status === 'Not Needed') {
+      pieStatusCounts['Not Needed']++;
+    } else if (status === 'Reviewing') {
+      pieStatusCounts['Reviewing']++;
+    } else if (status === 'In Progress') {
+      pieStatusCounts['In Progress']++;
+    } else if (status === 'Done') {
+      pieStatusCounts['Done']++;
+    } else {
+      pieStatusCounts['Others']++;
     }
-    statusCounts[group] = (statusCounts[group] || 0) + 1;
   });
 
   const total = allTickets.length;
@@ -532,13 +542,15 @@ function renderStatusPieChart() {
     return;
   }
 
-  // Calculate percentages and angles
-  const data = Object.entries(statusCounts).map(([status, count]) => ({
-    status,
-    count,
-    percentage: (count / total) * 100,
-    color: STATUS_COLORS[status] || '#666'
-  }));
+  // Calculate percentages and angles, filter out zero counts
+  const data = Object.entries(pieStatusCounts)
+    .filter(([status, count]) => count > 0)
+    .map(([status, count]) => ({
+      status,
+      count,
+      percentage: (count / total) * 100,
+      color: STATUS_COLORS[status] || '#666'
+    }));
 
   // Create SVG pie chart
   let currentAngle = 0;
