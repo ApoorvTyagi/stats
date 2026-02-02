@@ -1190,24 +1190,27 @@ body {
 .day-of-week-chart {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   padding: var(--spacing-lg);
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--radius-md);
+  width: 100%;
 }
 
 .day-row {
-  display: grid;
-  grid-template-columns: 50px 1fr 50px;
-  gap: var(--spacing-md);
+  display: flex;
   align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
 }
 
 .day-row-label {
+  width: 50px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
   text-align: right;
+  flex-shrink: 0;
 }
 
 .day-row.weekend .day-row-label {
@@ -1215,10 +1218,12 @@ body {
 }
 
 .day-row-track {
+  flex: 1;
   height: 24px;
   background: var(--bg-tertiary);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  min-width: 100px;
 }
 
 .day-row-fill {
@@ -1227,6 +1232,7 @@ body {
   background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
   transition: width 0.6s ease-out, filter 0.2s ease;
   width: 0%;
+  min-width: 4px;
 }
 
 .day-row.weekend .day-row-fill {
@@ -1239,10 +1245,12 @@ body {
 }
 
 .day-row-value {
+  width: 50px;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-align: left;
+  flex-shrink: 0;
   transition: color var(--transition-base);
 }
 
@@ -1340,17 +1348,15 @@ body {
     padding: var(--spacing-md);
   }
   
-  .day-row {
-    grid-template-columns: 40px 1fr 40px;
-  }
-  
   .day-row-label,
   .day-row-value {
+    width: 40px;
     font-size: 0.75rem;
   }
   
   .day-row-track {
     height: 20px;
+    min-width: 60px;
   }
   
   .activity-summary {

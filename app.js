@@ -472,7 +472,10 @@ function updateTopRepos(repos) {
  * Update day of week activity chart - horizontal bars
  */
 function updateDayOfWeekChart(activityData) {
-  if (!elements.dayOfWeekChart) return;
+  if (!elements.dayOfWeekChart) {
+    console.warn('dayOfWeekChart element not found');
+    return;
+  }
   
   // If no data from backend, show placeholder
   if (!activityData) {
@@ -495,15 +498,20 @@ function updateDayOfWeekChart(activityData) {
   
   const dayRows = elements.dayOfWeekChart.querySelectorAll('.day-row');
   
+  if (dayRows.length === 0) {
+    console.warn('No day-row elements found');
+    return;
+  }
+  
   dayRows.forEach((row, index) => {
-    const value = values[index];
-    const percentage = (value / maxValue) * 100;
+    const value = values[index] || 0;
+    const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
     
     const fill = row.querySelector('.day-row-fill');
     const valueEl = row.querySelector('.day-row-value');
     
     if (fill) {
-      fill.style.width = `${percentage}%`;
+      fill.style.width = `${Math.max(percentage, 2)}%`;
     }
     if (valueEl) {
       valueEl.textContent = value;
