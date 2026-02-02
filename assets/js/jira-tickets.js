@@ -18,8 +18,25 @@ const STATUS_COLORS = {
   'Others': '#F85149'
 };
 
-// Known statuses from BE for each filter category
-const KNOWN_STATUSES = ['To Do', 'Not Needed', 'Reviewing', 'In Progress', 'Done'];
+// Map API summary keys to display names
+const STATUS_KEY_MAP = {
+  'toDo': 'To Do',
+  'notNeeded': 'Not Needed',
+  'reviewing': 'Reviewing',
+  'inProgress': 'In Progress',
+  'done': 'Done',
+  'others': 'Others'
+};
+
+// Map display names to API status parameter values
+const STATUS_API_PARAM = {
+  'To Do': 'To Do',
+  'Not Needed': 'Not Needed',
+  'Reviewing': 'Reviewing',
+  'In Progress': 'In Progress',
+  'Done': 'Done',
+  'Others': 'Others'
+};
 
 /**
  * Get JIRA username from URL or use default
@@ -46,11 +63,11 @@ function getGitHubUsername() {
 const JIRA_USERNAME = getJiraUsername();
 
 // State
-let allTickets = [];
-let filteredTickets = [];
+let currentTickets = [];
 let currentStatusFilter = 'In Progress';
 let currentPage = 1;
 let statusCounts = {};
+let isLoadingTickets = false;
 
 // DOM Elements
 const elements = {
@@ -102,8 +119,11 @@ async function init() {
     // Setup event listeners
     setupEventListeners();
 
-    // Load all tickets
-    await loadAllTickets();
+    // Load summary (for pie chart and filter counts)
+    await loadSummary();
+
+    // Load tickets for the default status filter
+    await loadTicketsByStatus(currentStatusFilter);
 
   } catch (error) {
     showError('Failed to initialize: ' + error.message);
@@ -147,13 +167,78 @@ function setupEventListeners() {
 }
 
 /**
- * Load all tickets from API
+ * Load summary from API (for pie chart and filter counts)
  */
-async function loadAllTickets() {
+async function loadSummary() {
   try {
-    // Fetch all assigned tickets (we'll get all pages)
     const response = await fetch(
       `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=assigned`
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch summary';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (parseError) {}
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    
+    // Extract summary counts from API response
+    if (data.summary) {
+      statusCounts = {
+        'To Do': data.summary.toDo || 0,
+        'Not Needed': data.summary.notNeeded || 0,
+        'Reviewing': data.summary.reviewing || 0,
+        'In Progress': data.summary.inProgress || 0,
+        'Done': data.summary.done || 0,
+        'Others': data.summary.others || 0
+      };
+    } else {
+      // Fallback if no summary
+      statusCounts = {
+        'To Do': 0,
+        'Not Needed': 0,
+        'Reviewing': 0,
+        'In Progress': 0,
+        'Done': 0,
+        'Others': 0
+      };
+    }
+
+    // Update filter counts
+    updateStatusFilterCounts();
+
+    // Render pie chart using summary data
+    renderStatusPieChart();
+
+    // Hide monthly chart since we don't have all tickets data
+    hideMonthlyChart();
+
+  } catch (error) {
+    const displayMessage = error.message || 'Failed to load summary';
+    showError(displayMessage);
+    renderEmptyCharts();
+  }
+}
+
+/**
+ * Load tickets by status from API
+ */
+async function loadTicketsByStatus(status) {
+  if (isLoadingTickets) return;
+  
+  isLoadingTickets = true;
+  showTicketsLoading();
+
+  try {
+    const statusParam = STATUS_API_PARAM[status] || status;
+    const response = await fetch(
+      `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=assigned&status=${encodeURIComponent(statusParam)}&limit=100`
     );
 
     if (!response.ok) {
@@ -169,31 +254,21 @@ async function loadAllTickets() {
 
     const data = await response.json();
     
-    // Collect all tickets from all status groups
-    allTickets = [];
-    
-    // If the API returns grouped data, flatten it
+    // Extract tickets from response
     if (data.data && data.data.tickets) {
-      allTickets = data.data.tickets;
+      currentTickets = data.data.tickets;
     } else if (data.tickets) {
-      allTickets = data.tickets;
+      currentTickets = data.tickets;
     } else {
-      // Try to fetch from each status group
-      await fetchAllStatusGroups();
+      currentTickets = [];
     }
 
-    // Calculate status counts
-    calculateStatusCounts();
-    
-    // Update filter counts
-    updateStatusFilterCounts();
+    // Update count display
+    elements.ticketCount.textContent = currentTickets.length;
 
-    // Apply initial filter
-    applyFilters();
-
-    // Render charts
-    renderStatusPieChart();
-    renderMonthlyChart();
+    // Reset pagination and render
+    currentPage = 1;
+    sortAndRenderTickets();
 
   } catch (error) {
     const displayMessage = error.message || 'Failed to load tickets';
@@ -206,64 +281,23 @@ async function loadAllTickets() {
         <span>${escapeHtml(displayMessage)}</span>
       </div>
     `;
-    renderEmptyCharts();
+    currentTickets = [];
+  } finally {
+    isLoadingTickets = false;
   }
 }
 
 /**
- * Fetch tickets from all status groups
+ * Show loading state for tickets list
  */
-async function fetchAllStatusGroups() {
-  const statuses = ['Open', 'In Progress', 'Blocked', 'Done'];
-  
-  for (const status of statuses) {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/tickets/grouped?username=${encodeURIComponent(JIRA_USERNAME)}&type=assigned&status=${encodeURIComponent(status)}&limit=100`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        const tickets = data.data?.tickets || [];
-        allTickets = [...allTickets, ...tickets];
-      }
-    } catch (e) {
-      console.warn(`Failed to fetch ${status} tickets:`, e);
-    }
-  }
-}
-
-/**
- * Calculate status counts from all tickets
- */
-function calculateStatusCounts() {
-  statusCounts = {
-    'To Do': 0,
-    'Not Needed': 0,
-    'Reviewing': 0,
-    'In Progress': 0,
-    'Done': 0,
-    'Others': 0
-  };
-
-  allTickets.forEach(ticket => {
-    const status = ticket.status || '';
-    // Map statuses to our filter categories based on BE statuses
-    if (status === 'To Do') {
-      statusCounts['To Do']++;
-    } else if (status === 'Not Needed') {
-      statusCounts['Not Needed']++;
-    } else if (status === 'Reviewing') {
-      statusCounts['Reviewing']++;
-    } else if (status === 'In Progress') {
-      statusCounts['In Progress']++;
-    } else if (status === 'Done') {
-      statusCounts['Done']++;
-    } else {
-      // Any status that doesn't match goes to Others
-      statusCounts['Others']++;
-    }
-  });
+function showTicketsLoading() {
+  elements.ticketsList.innerHTML = `
+    <div class="tickets-loading">
+      <div class="spinner"></div>
+      <span>Loading tickets...</span>
+    </div>
+  `;
+  elements.paginationControls.style.display = 'none';
 }
 
 /**
@@ -279,9 +313,14 @@ function updateStatusFilterCounts() {
 }
 
 /**
- * Filter tickets by status
+ * Filter tickets by status - calls API when clicked
  */
-function filterByStatus(status) {
+async function filterByStatus(status) {
+  if (currentStatusFilter === status && currentTickets.length > 0) {
+    // Already on this status with data, no need to reload
+    return;
+  }
+
   currentStatusFilter = status;
   currentPage = 1;
 
@@ -290,41 +329,8 @@ function filterByStatus(status) {
     btn.classList.toggle('active', btn.dataset.status === status);
   });
 
-  // Apply combined filters
-  applyFilters();
-}
-
-/**
- * Apply status filter
- */
-function applyFilters() {
-  // Start with all tickets and apply status filter
-  filteredTickets = allTickets.filter(ticket => {
-    const status = ticket.status || '';
-    switch (currentStatusFilter) {
-      case 'To Do':
-        return status === 'To Do';
-      case 'Not Needed':
-        return status === 'Not Needed';
-      case 'Reviewing':
-        return status === 'Reviewing';
-      case 'In Progress':
-        return status === 'In Progress';
-      case 'Done':
-        return status === 'Done';
-      case 'Others':
-        // Any status that doesn't match known statuses
-        return !KNOWN_STATUSES.includes(status);
-      default:
-        return true;
-    }
-  });
-
-  // Update count display
-  elements.ticketCount.textContent = filteredTickets.length;
-
-  // Sort and render
-  sortAndRenderTickets();
+  // Load tickets for the selected status
+  await loadTicketsByStatus(status);
 }
 
 /**
@@ -334,7 +340,7 @@ function sortAndRenderTickets() {
   const sortBy = elements.sortSelect.value;
   
   // Sort tickets
-  const sorted = [...filteredTickets].sort((a, b) => {
+  const sorted = [...currentTickets].sort((a, b) => {
     switch (sortBy) {
       case 'updated':
         return new Date(b.updatedAt) - new Date(a.updatedAt);
@@ -382,14 +388,7 @@ function getStatusWeight(status) {
     'Reviewing': 2,
     'To Do': 3,
     'Not Needed': 4,
-    'Done': 5,
-    // Legacy statuses for backward compatibility
-    'Blocked': 1,
-    'In Review': 2,
-    'Code Review': 2,
-    'Open': 3,
-    'Resolved': 5,
-    'Closed': 6
+    'Done': 5
   };
   return weights[status] || 4;
 }
@@ -421,7 +420,7 @@ function renderTicketsList(tickets) {
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84H11.53zM6.77 6.8a4.36 4.36 0 0 0 4.34 4.34h1.8v1.72a4.36 4.36 0 0 0 4.34 4.34V7.63a.84.84 0 0 0-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.34 4.35 4.35h1.78v1.7A4.36 4.36 0 0 0 12.47 22v-9.57a.84.84 0 0 0-.84-.84H2z"/>
         </svg>
-        <span>No ${currentTypeFilter === 'all' ? '' : currentTypeFilter + ' '}tickets found</span>
+        <span>No ${currentStatusFilter} tickets found</span>
       </div>
     `;
     return;
@@ -505,37 +504,10 @@ function createTicketCard(ticket) {
 }
 
 /**
- * Render status pie chart
+ * Render status pie chart using summary data
  */
 function renderStatusPieChart() {
-  const pieStatusCounts = {
-    'To Do': 0,
-    'Not Needed': 0,
-    'Reviewing': 0,
-    'In Progress': 0,
-    'Done': 0,
-    'Others': 0
-  };
-  
-  // Count by the new status categories
-  allTickets.forEach(ticket => {
-    const status = ticket.status || '';
-    if (status === 'To Do') {
-      pieStatusCounts['To Do']++;
-    } else if (status === 'Not Needed') {
-      pieStatusCounts['Not Needed']++;
-    } else if (status === 'Reviewing') {
-      pieStatusCounts['Reviewing']++;
-    } else if (status === 'In Progress') {
-      pieStatusCounts['In Progress']++;
-    } else if (status === 'Done') {
-      pieStatusCounts['Done']++;
-    } else {
-      pieStatusCounts['Others']++;
-    }
-  });
-
-  const total = allTickets.length;
+  const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
   
   if (total === 0) {
     renderEmptyPieChart();
@@ -543,7 +515,7 @@ function renderStatusPieChart() {
   }
 
   // Calculate percentages and angles, filter out zero counts
-  const data = Object.entries(pieStatusCounts)
+  const data = Object.entries(statusCounts)
     .filter(([status, count]) => count > 0)
     .map(([status, count]) => ({
       status,
@@ -619,55 +591,13 @@ function createPieSlice(startAngle, angle, color) {
 }
 
 /**
- * Render monthly distribution bar chart
+ * Hide monthly chart (since we don't have all tickets)
  */
-function renderMonthlyChart() {
-  const monthCounts = {};
-  const now = new Date();
-  
-  // Initialize last 6 months
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    monthCounts[key] = 0;
+function hideMonthlyChart() {
+  const monthlyChartCard = elements.monthlyChart.closest('.chart-card');
+  if (monthlyChartCard) {
+    monthlyChartCard.style.display = 'none';
   }
-
-  // Count tickets by creation month
-  allTickets.forEach(ticket => {
-    if (ticket.createdAt) {
-      const date = new Date(ticket.createdAt);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      if (monthCounts.hasOwnProperty(key)) {
-        monthCounts[key]++;
-      }
-    }
-  });
-
-  const entries = Object.entries(monthCounts);
-  const maxCount = Math.max(...Object.values(monthCounts), 1);
-
-  if (entries.length === 0) {
-    renderEmptyBarChart();
-    return;
-  }
-
-  const rows = entries.map(([month, count]) => {
-    const percentage = (count / maxCount) * 100;
-    const [year, monthNum] = month.split('-');
-    const monthName = new Date(year, parseInt(monthNum) - 1, 1).toLocaleDateString('en-US', { month: 'short' });
-    
-    return `
-      <div class="bar-chart-row">
-        <span class="bar-chart-label">${monthName}</span>
-        <div class="bar-chart-track">
-          <div class="bar-chart-fill" style="width: ${Math.max(percentage, 2)}%"></div>
-          <span class="bar-chart-value">${count}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  elements.monthlyChart.innerHTML = `<div class="bar-chart">${rows}</div>`;
 }
 
 /**
@@ -675,7 +605,7 @@ function renderMonthlyChart() {
  */
 function renderEmptyCharts() {
   renderEmptyPieChart();
-  renderEmptyBarChart();
+  hideMonthlyChart();
 }
 
 function renderEmptyPieChart() {
@@ -688,17 +618,6 @@ function renderEmptyPieChart() {
     </div>
   `;
   elements.statusLegend.innerHTML = '';
-}
-
-function renderEmptyBarChart() {
-  elements.monthlyChart.innerHTML = `
-    <div class="chart-placeholder">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
-      </svg>
-      <span>No data available</span>
-    </div>
-  `;
 }
 
 /**
