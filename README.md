@@ -2,7 +2,7 @@
 
 A beautiful, modern dashboard to view your GitHub PR statistics, merge time metrics, and JIRA tickets across all contributed repositories.
 
-🔗 **Live**: [apoorvtyagi.github.io/stats](https://apoorvtyagi.tech/stats/))
+🔗 **Live**: [apoorvtyagi.tech/stats/](https://apoorvtyagi.tech/stats/)
 
 ## Features
 
