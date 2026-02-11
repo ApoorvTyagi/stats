@@ -2,7 +2,7 @@
 
 A beautiful, modern dashboard to view your GitHub PR statistics, merge time metrics, and JIRA tickets across all contributed repositories.
 
-🔗 **Live**: [tyagiapoorv.github.io/stats](https://tyagiapoorv.github.io/stats/)
+🔗 **Live**: [apoorvtyagi.github.io/stats](https://apoorvtyagi.tech/stats/))
 
 ## Features
 
@@ -15,7 +15,7 @@ A beautiful, modern dashboard to view your GitHub PR statistics, merge time metr
 ### Activity Timeline
 - 📅 **Weekly Activity** - View PR activity over the last 4 weeks
 - 📊 **Created vs Merged** - Side-by-side comparison of PRs created and merged each week
-- 📈 **Trend Indicators** - See percentage change compared to previous period
+- 📈 **Trend Indicators** - See percentage change compared to the previous period
 - 💡 **Interactive Tooltips** - Hover over bars to see detailed weekly stats
 
 ### Day of Week Analysis
