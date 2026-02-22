@@ -2,7 +2,7 @@
 
 A beautiful, modern dashboard to view your GitHub PR statistics, merge time metrics, and JIRA tickets across all contributed repositories.
 
-🔗 **Live**: [apoorvtyagi.tech/stats/](https://apoorvtyagi.tech/stats/)
+🔗 **Live**: [apoorvtyagi.github.io/stats/](https://apoorvtyagi.github.io/stats/)
 
 ## Features
 
@@ -47,23 +47,23 @@ A beautiful, modern dashboard to view your GitHub PR statistics, merge time metr
 Visit the dashboard with a GitHub username in the URL:
 
 ```
-https://tyagiapoorv.github.io/stats/<username>
+https://apoorvtyagi.github.io/stats/<username>
 ```
 
 **Examples:**
-- `https://tyagiapoorv.github.io/stats/tyagiapoorv` - View stats for tyagiapoorv
-- `https://tyagiapoorv.github.io/stats/octocat` - View stats for octocat
+- `https://apoorvtyagi.github.io/stats/apoorvtyagi` - View stats for apoorvtyagi
+- `https://apoorvtyagi.github.io/stats/octocat` - View stats for octocat
 
 ### Navigating to Open PRs
 Click on the "Open" PR card in the dashboard to view all open pull requests, or navigate directly:
 ```
-https://tyagiapoorv.github.io/stats/open-prs.html?user=<username>
+https://apoorvtyagi.github.io/stats/open-prs.html?user=<username>
 ```
 
 ### Navigating to JIRA Tickets
 Click on the "JIRA" link in the header navigation, or navigate directly:
 ```
-https://tyagiapoorv.github.io/stats/jira-tickets.html?username=<jira-username>
+https://apoorvtyagi.github.io/stats/jira-tickets.html?username=<jira-username>
 ```
 
 ## Project Structure
@@ -137,4 +137,4 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 
 ## License
 
-[MIT](https://github.com/tyagiapoorv/stats/blob/main/LICENSE)
+[MIT](https://github.com/apoorvtyagi/stats/blob/main/LICENSE)
