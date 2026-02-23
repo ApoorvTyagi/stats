@@ -31,9 +31,17 @@
           <h1>GitHub Stats</h1>
         </div>
         <nav class="header-nav" id="headerNav">
+          <a href="pages/code-reviews.html" class="nav-link reviews-link" id="reviewsLink"
+            title="View Code Review Metrics">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+            </svg>
+            <span>Reviews</span>
+          </a>
           <a href="pages/jira-tickets.html" class="nav-link jira-link" id="jiraLink" title="View JIRA Tickets">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84H11.53zM6.77 6.8a4.36 4.36 0 0 0 4.34 4.34h1.8v1.72a4.36 4.36 0 0 0 4.34 4.34V7.63a.84.84 0 0 0-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.34 4.35 4.35h1.78v1.7A4.36 4.36 0 0 0 12.47 22v-9.57a.84.84 0 0 0-.84-.84H2z"/>
+              <path
+                d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35h1.78v1.7c0 2.4 1.94 4.34 4.34 4.35V2.84a.84.84 0 0 0-.84-.84H11.53zM6.77 6.8a4.36 4.36 0 0 0 4.34 4.34h1.8v1.72a4.36 4.36 0 0 0 4.34 4.34V7.63a.84.84 0 0 0-.84-.84H6.77zM2 11.6c0 2.4 1.95 4.34 4.35 4.35h1.78v1.7A4.36 4.36 0 0 0 12.47 22v-9.57a.84.84 0 0 0-.84-.84H2z" />
             </svg>
             <span>JIRA</span>
           </a>
@@ -92,7 +100,7 @@
             <div class="click-hint">
               <span>View all</span>
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
               </svg>
             </div>
           </div>
@@ -182,7 +190,7 @@
           <h2 class="section-title">Top Repositories</h2>
           <p class="section-subtitle">Repositories ranked by merged PRs</p>
         </div>
-        
+
         <!-- Detailed Repository Cards -->
         <div class="repos-grid" id="reposGrid">
           <div class="repo-placeholder">Loading repositories...</div>
@@ -195,13 +203,13 @@
           <h2 class="section-title">Activity Timeline</h2>
           <p class="section-subtitle">PR activity over the last 4 weeks</p>
         </div>
-        
+
         <!-- Activity Summary Cards -->
         <div class="activity-summary">
           <div class="activity-summary-card created">
             <div class="activity-summary-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
               </svg>
             </div>
             <div class="activity-summary-content">
@@ -216,7 +224,7 @@
           <div class="activity-summary-card merged">
             <div class="activity-summary-icon">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
               </svg>
             </div>
             <div class="activity-summary-content">
@@ -229,7 +237,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Activity Chart -->
         <div class="activity-chart-container">
           <div class="activity-chart" id="activityChart">
@@ -305,7 +313,8 @@
         </div>
         <div class="day-of-week-placeholder" id="dayOfWeekPlaceholder">
           <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
           </svg>
           <span>Activity data will be available once the backend is updated</span>
         </div>
@@ -323,7 +332,8 @@
       <div class="loading-content">
         <div class="loading-icon">
           <svg class="github-logo" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
           </svg>
           <div class="spinner-ring"></div>
         </div>
@@ -333,7 +343,8 @@
         <div class="loading-fact-container">
           <div class="fact-icon">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
             </svg>
           </div>
           <p class="loading-fact" id="loadingFact">Did you know? Loading interesting facts...</p>
