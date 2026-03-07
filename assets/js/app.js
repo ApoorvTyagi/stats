@@ -13,13 +13,13 @@ const DEFAULT_USERNAME = 'tyagiapoorv';
  */
 function checkAndRedirectOpenPRsRoute() {
   const pathname = window.location.pathname;
-  
+
   // Check if URL contains open-prs (e.g., /stats/username/open-prs.html)
   if (pathname.includes('open-prs')) {
     // Extract username from path like /stats/username/open-prs.html
     const match = pathname.match(/\/stats\/([^\/]+)\/open-prs/i);
     const username = match ? match[1] : null;
-    
+
     // Redirect to the proper open-prs page with query parameter
     if (username && username !== DEFAULT_USERNAME) {
       window.location.replace(`/stats/pages/open-prs.html?user=${encodeURIComponent(username)}`);
@@ -33,33 +33,33 @@ function checkAndRedirectOpenPRsRoute() {
 
 function getUsernameFromPath() {
   const pathname = window.location.pathname;
-  
+
   // Remove /stats/ prefix first
   let path = pathname.replace(/^\/stats\/?/, '');
-  
+
   // Remove trailing slash and/or index.html
   path = path.replace(/\/?(?:index\.html)?$/, '');
-  
+
   // Remove any remaining trailing slashes
   path = path.replace(/\/+$/, '');
-  
+
   // Known reserved paths that are NOT usernames
   const reservedPaths = ['pages', 'assets', 'index.html', 'open-prs.html', 'open-prs', 'jira-tickets.html', 'jira-tickets'];
-  
+
   // If empty or is a known reserved path, return default
   if (!path || reservedPaths.includes(path.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
-  
+
   // If path contains a slash, take only the first segment (the username)
   const segments = path.split('/');
   const username = segments[0];
-  
+
   // Final check - if it's a reserved path (not a username), return default
   if (reservedPaths.includes(username.toLowerCase())) {
     return DEFAULT_USERNAME;
   }
-  
+
   return username;
 }
 
@@ -73,6 +73,7 @@ const elements = {
   userAvatar: document.getElementById('userAvatar'),
   username: document.getElementById('username'),
   jiraLink: document.getElementById('jiraLink'),
+  reviewsLink: document.getElementById('reviewsLink'),
 
   totalPRs: document.getElementById('totalPRs'),
   openPRs: document.getElementById('openPRs'),
@@ -89,14 +90,14 @@ const elements = {
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
   toastMessage: document.getElementById('toastMessage'),
-  
+
   // Activity Timeline elements
   activityChart: document.getElementById('activityChart'),
   totalCreated: document.getElementById('totalCreated'),
   totalMerged: document.getElementById('totalMerged'),
   trendCreated: document.getElementById('trendCreated'),
   trendMerged: document.getElementById('trendMerged'),
-  
+
   // Day of Week elements
   dayOfWeekChart: document.getElementById('dayOfWeekChart'),
   dayOfWeekPlaceholder: document.getElementById('dayOfWeekPlaceholder')
@@ -119,8 +120,8 @@ async function init() {
       favicon.href = `https://github.com/${GITHUB_USERNAME}.png`;
     }
 
-    // Show JIRA link only for default user or tyagiapoorv
-    updateJiraLinkVisibility();
+    // Update nav links (Reviews for all, JIRA premium-only)
+    updateNavLinks();
 
     // Setup click handler for Open PRs card
     setupOpenPRsCardClick();
@@ -135,15 +136,48 @@ async function init() {
 }
 
 /**
- * Show JIRA link only for default user or tyagiapoorv, and update its href
+ * Update nav link visibility and state
+ * - Reviews: always visible and clickable for all users
+ * - JIRA: always visible, but disabled with premium tooltip for non-default users
  */
-function updateJiraLinkVisibility() {
+function updateNavLinks() {
+  // Update Reviews link - always visible, pass username
+  if (elements.reviewsLink) {
+    if (GITHUB_USERNAME !== DEFAULT_USERNAME) {
+      elements.reviewsLink.href = `/stats/pages/code-reviews.html?user=${encodeURIComponent(GITHUB_USERNAME)}`;
+    } else {
+      elements.reviewsLink.href = '/stats/pages/code-reviews.html';
+    }
+  }
+
+  // Update JIRA link
   if (elements.jiraLink) {
-    const showJira = GITHUB_USERNAME === DEFAULT_USERNAME || GITHUB_USERNAME.toLowerCase() === 'tyagiapoorv';
-    elements.jiraLink.style.display = showJira ? '' : 'none';
-    
-    // Update JIRA link href to use absolute path
-    elements.jiraLink.href = '/stats/pages/jira-tickets.html';
+    const isPremiumUser = GITHUB_USERNAME === DEFAULT_USERNAME || GITHUB_USERNAME.toLowerCase() === 'tyagiapoorv';
+
+    if (isPremiumUser) {
+      // Full access for premium/default users
+      elements.jiraLink.href = '/stats/pages/jira-tickets.html';
+      elements.jiraLink.classList.remove('disabled');
+      elements.jiraLink.title = 'View JIRA Tickets';
+    } else {
+      // Disabled state with premium tooltip for other users
+      elements.jiraLink.href = '#';
+      elements.jiraLink.classList.add('disabled');
+      elements.jiraLink.title = '';
+
+      // Add premium tooltip if not already added
+      if (!elements.jiraLink.querySelector('.premium-tooltip')) {
+        const tooltip = document.createElement('span');
+        tooltip.className = 'premium-tooltip';
+        tooltip.textContent = 'Available for premium users';
+        elements.jiraLink.appendChild(tooltip);
+      }
+
+      // Prevent navigation
+      elements.jiraLink.addEventListener('click', (e) => {
+        e.preventDefault();
+      });
+    }
   }
 }
 
@@ -212,10 +246,10 @@ async function loadAggregateStats() {
 
     // Update top repos
     updateTopRepos(data.contributedRepos);
-    
+
     // Update day of week chart from aggregate data
     updateDayOfWeekChart(data.activityByDay);
-    
+
     // Fetch activity timeline from new endpoint
     loadActivityData();
 
@@ -232,7 +266,7 @@ async function loadAggregateStats() {
 async function loadActivityData() {
   try {
     const response = await fetch(`${API_BASE_URL}/activity?username=${encodeURIComponent(GITHUB_USERNAME)}`);
-    
+
     if (response.ok) {
       const activityData = await response.json();
       updateActivityTimeline(activityData);
@@ -258,27 +292,27 @@ function updateActivityTimeline(activityData) {
     }
     return;
   }
-  
+
   // Get only last 4 weeks
   const last4Weeks = activityData.timeline.slice(-4);
-  
+
   // Calculate totals for last 4 weeks only
   const totals = last4Weeks.reduce((acc, week) => {
     acc.created += week.created || 0;
     acc.merged += week.merged || 0;
     return acc;
   }, { created: 0, merged: 0 });
-  
+
   // Update totals
   if (elements.totalCreated) animateValue(elements.totalCreated, totals.created);
   if (elements.totalMerged) animateValue(elements.totalMerged, totals.merged);
-  
+
   // Update trends
   if (activityData.trend) {
     updateTrendIndicator(elements.trendCreated, activityData.trend.created);
     updateTrendIndicator(elements.trendMerged, activityData.trend.merged);
   }
-  
+
   // Render chart with last 4 weeks only
   renderActivityChart(last4Weeks);
 }
@@ -288,12 +322,12 @@ function updateActivityTimeline(activityData) {
  */
 function updateTrendIndicator(element, trendValue) {
   if (!element) return;
-  
+
   const trendEl = element.querySelector('.trend-value');
   if (!trendEl) return;
-  
+
   element.classList.remove('up', 'down', 'neutral');
-  
+
   if (trendValue > 0) {
     element.classList.add('up');
     trendEl.textContent = `↑ ${Math.round(trendValue)}%`;
@@ -311,21 +345,21 @@ function updateTrendIndicator(element, trendValue) {
  */
 function renderActivityChart(timeline) {
   if (!elements.activityChart || !timeline || timeline.length === 0) return;
-  
+
   // Find max value for scaling
   const maxCreated = Math.max(...timeline.map(w => w.created || 0), 1);
   const maxMerged = Math.max(...timeline.map(w => w.merged || 0), 1);
   const maxValue = Math.max(maxCreated, maxMerged);
-  
+
   // Generate rows for each week
   const rowsHtml = timeline.map((week) => {
     const createdPercent = ((week.created || 0) / maxValue) * 100;
     const mergedPercent = ((week.merged || 0) / maxValue) * 100;
-    
+
     // Format date for label
     const date = new Date(week.date);
     const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    
+
     return `
       <div class="activity-row">
         <span class="activity-row-label">${label}</span>
@@ -342,7 +376,7 @@ function renderActivityChart(timeline) {
       </div>
     `;
   }).join('');
-  
+
   elements.activityChart.innerHTML = `
     <div class="activity-chart-horizontal">
       ${rowsHtml}
@@ -507,7 +541,7 @@ function updateDayOfWeekChart(activityData) {
     console.warn('dayOfWeekChart element not found');
     return;
   }
-  
+
   // If no data from backend, show placeholder
   if (!activityData) {
     // Keep the placeholder visible
@@ -516,31 +550,31 @@ function updateDayOfWeekChart(activityData) {
     }
     return;
   }
-  
+
   // Hide placeholder when we have data
   if (elements.dayOfWeekPlaceholder) {
     elements.dayOfWeekPlaceholder.style.display = 'none';
   }
-  
+
   const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  
+
   const values = dayKeys.map(key => activityData[key] || 0);
   const maxValue = Math.max(...values, 1);
-  
+
   const dayRows = elements.dayOfWeekChart.querySelectorAll('.day-row');
-  
+
   if (dayRows.length === 0) {
     console.warn('No day-row elements found');
     return;
   }
-  
+
   dayRows.forEach((row, index) => {
     const value = values[index] || 0;
     const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
-    
+
     const fill = row.querySelector('.day-row-fill');
     const valueEl = row.querySelector('.day-row-value');
-    
+
     if (fill) {
       fill.style.width = `${Math.max(percentage, 2)}%`;
     }
@@ -594,13 +628,13 @@ function resetStats() {
   if (elements.openPRs) elements.openPRs.textContent = '-';
   if (elements.mergedPRs) elements.mergedPRs.textContent = '-';
   if (elements.closedPRs) elements.closedPRs.textContent = '-';
-  
+
   // Merge Metrics
   if (elements.avgTime) elements.avgTime.textContent = '-';
   if (elements.p50Time) elements.p50Time.textContent = '-';
   if (elements.p95Time) elements.p95Time.textContent = '-';
   if (elements.p99Time) elements.p99Time.textContent = '-';
-  
+
   // Chart
   if (elements.chart) {
     elements.chart.innerHTML = `
@@ -610,14 +644,14 @@ function resetStats() {
     `;
   }
   if (elements.chartLegend) elements.chartLegend.innerHTML = '';
-  
+
   // Repos
   if (elements.reposGrid) {
     elements.reposGrid.innerHTML = `
       <div class="repo-placeholder">Unable to load repositories</div>
     `;
   }
-  
+
   // Activity Timeline
   if (elements.activityChart) {
     elements.activityChart.innerHTML = `
