@@ -69,6 +69,42 @@
         </div>
       </section>
 
+      <!-- Date Filter -->
+      <section class="date-filter-bar" id="dateFilterBar">
+        <div class="filter-label">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+          </svg>
+          <span>Date Range</span>
+        </div>
+        <div class="date-filter-group">
+          <label for="filterFromMonth">From</label>
+          <div class="date-filter-inputs">
+            <select class="date-filter-select" id="filterFromMonth"></select>
+            <select class="date-filter-select" id="filterFromYear"></select>
+          </div>
+        </div>
+        <div class="date-filter-separator">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+          </svg>
+        </div>
+        <div class="date-filter-group">
+          <label for="filterToMonth">To</label>
+          <div class="date-filter-inputs">
+            <select class="date-filter-select" id="filterToMonth"></select>
+            <select class="date-filter-select" id="filterToYear"></select>
+          </div>
+        </div>
+        <button class="date-filter-apply" id="applyDateFilter">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
+          </svg>
+          Apply
+        </button>
+      </section>
+
       <!-- Stats Overview -->
       <section class="stats-section">
         <h2 class="section-title">Pull Request Overview</h2>

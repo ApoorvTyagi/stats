@@ -42,7 +42,14 @@ const elements = {
   recentReviewsList: document.getElementById('recentReviewsList'),
   loadingOverlay: document.getElementById('loadingOverlay'),
   errorToast: document.getElementById('errorToast'),
-  toastMessage: document.getElementById('toastMessage')
+  toastMessage: document.getElementById('toastMessage'),
+
+  // Date filter elements
+  filterFromMonth: document.getElementById('filterFromMonth'),
+  filterFromYear: document.getElementById('filterFromYear'),
+  filterToMonth: document.getElementById('filterToMonth'),
+  filterToYear: document.getElementById('filterToYear'),
+  applyDateFilter: document.getElementById('applyDateFilter')
 };
 
 /**
@@ -73,12 +80,99 @@ async function init() {
       }
     }
 
+    // Setup date filter
+    setupDateFilter();
+
     // Load code review metrics
     await loadCodeReviewMetrics();
   } catch (error) {
     showError('Failed to initialize: ' + error.message);
   } finally {
     showLoading(false);
+  }
+}
+
+/**
+ * Initialize the date filter dropdowns and apply button
+ */
+function setupDateFilter() {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const defaultFromMonth = 0; // January
+  const defaultFromYear = 2026;
+  const defaultToMonth = currentMonth;
+  const defaultToYear = currentYear;
+
+  // Populate month selects
+  [elements.filterFromMonth, elements.filterToMonth].forEach(select => {
+    if (!select) return;
+    select.innerHTML = '';
+    months.forEach((name, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+  });
+
+  // Populate year selects (2024 to current year + 1)
+  const startYear = 2024;
+  const endYear = currentYear + 1;
+  [elements.filterFromYear, elements.filterToYear].forEach(select => {
+    if (!select) return;
+    select.innerHTML = '';
+    for (let y = startYear; y <= endYear; y++) {
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = y;
+      select.appendChild(opt);
+    }
+  });
+
+  // Set defaults
+  if (elements.filterFromMonth) elements.filterFromMonth.value = defaultFromMonth;
+  if (elements.filterFromYear) elements.filterFromYear.value = defaultFromYear;
+  if (elements.filterToMonth) elements.filterToMonth.value = defaultToMonth;
+  if (elements.filterToYear) elements.filterToYear.value = defaultToYear;
+
+  // Store the current filter range on window for future API use
+  window.dateFilterRange = {
+    fromMonth: defaultFromMonth + 1,
+    fromYear: defaultFromYear,
+    toMonth: defaultToMonth + 1,
+    toYear: defaultToYear
+  };
+
+  // Apply button handler
+  if (elements.applyDateFilter) {
+    elements.applyDateFilter.addEventListener('click', () => {
+      const fromMonth = parseInt(elements.filterFromMonth.value);
+      const fromYear = parseInt(elements.filterFromYear.value);
+      const toMonth = parseInt(elements.filterToMonth.value);
+      const toYear = parseInt(elements.filterToYear.value);
+
+      if (fromYear > toYear || (fromYear === toYear && fromMonth > toMonth)) {
+        showError('"From" date cannot be after "To" date');
+        return;
+      }
+
+      window.dateFilterRange = {
+        fromMonth: fromMonth + 1,
+        fromYear: fromYear,
+        toMonth: toMonth + 1,
+        toYear: toYear
+      };
+
+      console.log('Date filter applied:', window.dateFilterRange);
+      // TODO: Re-fetch data with date filter params once API supports it
+    });
   }
 }
 
