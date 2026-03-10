@@ -105,8 +105,9 @@ function setupDateFilter() {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  const defaultFromMonth = 0; // January
-  const defaultFromYear = 2026;
+  // Default: From = November 2025, To = current month/year
+  const defaultFromMonth = 10; // November (0-indexed)
+  const defaultFromYear = 2025;
   const defaultToMonth = currentMonth;
   const defaultToYear = currentYear;
 
@@ -122,9 +123,9 @@ function setupDateFilter() {
     });
   });
 
-  // Populate year selects (2024 to current year + 1)
-  const startYear = 2024;
-  const endYear = currentYear + 1;
+  // Populate year selects (2022 to 2026)
+  const startYear = 2022;
+  const endYear = 2026;
   [elements.filterFromYear, elements.filterToYear].forEach(select => {
     if (!select) return;
     select.innerHTML = '';
@@ -142,7 +143,7 @@ function setupDateFilter() {
   if (elements.filterToMonth) elements.filterToMonth.value = defaultToMonth;
   if (elements.filterToYear) elements.filterToYear.value = defaultToYear;
 
-  // Store the current filter range on window for future API use
+  // Store the current filter range
   window.dateFilterRange = {
     fromMonth: defaultFromMonth + 1,
     fromYear: defaultFromYear,
@@ -150,9 +151,9 @@ function setupDateFilter() {
     toYear: defaultToYear
   };
 
-  // Apply button handler
+  // Apply button handler - re-fetches data with new date range
   if (elements.applyDateFilter) {
-    elements.applyDateFilter.addEventListener('click', () => {
+    elements.applyDateFilter.addEventListener('click', async () => {
       const fromMonth = parseInt(elements.filterFromMonth.value);
       const fromYear = parseInt(elements.filterFromYear.value);
       const toMonth = parseInt(elements.filterToMonth.value);
@@ -170,10 +171,27 @@ function setupDateFilter() {
         toYear: toYear
       };
 
-      console.log('Date filter applied:', window.dateFilterRange);
-      // TODO: Re-fetch data with date filter params once API supports it
+      // Re-fetch all data with new date filter
+      showLoading(true);
+      try {
+        await loadCodeReviewMetrics();
+      } finally {
+        showLoading(false);
+      }
     });
   }
+}
+
+/**
+ * Build date filter query params string for API calls
+ * Returns e.g. "&fromDate=11-2025&toDate=03-2026"
+ */
+function getDateFilterParams() {
+  const range = window.dateFilterRange;
+  if (!range) return '';
+  const fromMonth = String(range.fromMonth).padStart(2, '0');
+  const toMonth = String(range.toMonth).padStart(2, '0');
+  return `&fromDate=${fromMonth}-${range.fromYear}&toDate=${toMonth}-${range.toYear}`;
 }
 
 /**
@@ -181,7 +199,7 @@ function setupDateFilter() {
  */
 async function loadCodeReviewMetrics() {
   try {
-    const response = await fetch(`${API_BASE_URL}/code-review-metrics?username=${encodeURIComponent(GITHUB_USERNAME)}`);
+    const response = await fetch(`${API_BASE_URL}/code-review-metrics?username=${encodeURIComponent(GITHUB_USERNAME)}${getDateFilterParams()}`);
 
     if (!response.ok) {
       let errorMessage = 'Failed to fetch code review metrics';
